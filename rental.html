@@ -7,8 +7,8 @@
 <meta name="description" content="Демонстрационный кабинет администратора: график аренды залов." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="admin.css?v=1" />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=2" />
 </head>
 <body class="admin" data-page="rental">
 
@@ -27,16 +27,7 @@
     </span>
   </div>
 
-  <nav class="side-nav" id="sideNav">
-    <a href="admin.html" data-tab="overview"><span class="ni">◉</span> Обзор</a>
-    <a href="prices.html" data-tab="prices"><span class="ni">₽</span> Цены</a>
-    <a href="halls.html" data-tab="halls"><span class="ni">▦</span> Залы</a>
-    <a href="events.html" data-tab="events"><span class="ni">◈</span> События</a>
-    <a href="actors.html" data-tab="actors"><span class="ni">☆</span> Актёры</a>
-    <a href="rental.html" class="active" data-tab="rental"><span class="ni">⌂</span> Аренда зала</a>
-    <a href="analytics.html" data-tab="analytics"><span class="ni">∿</span> Аналитика</a>
-    <a href="ledger.html" data-tab="ledger"><span class="ni">▤</span> Бухгалтерия</a>
-  </nav>
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
 
   <a class="side-back" href="index.html">← Вернуться на сайт</a>
 </aside>
@@ -111,6 +102,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="admin-nav.js?v=1"></script>
 <script src="admin-store.js?v=1"></script>
 <script src="admin.js?v=1"></script>
 </body>

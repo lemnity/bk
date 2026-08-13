@@ -1,7 +1,7 @@
 /* ============================================================
    ТБДТ · Кабинет администратора (demo) — clean modern light admin
    Aesthetic: clean modern light theme — navy + gold accents.
-   Display: Unbounded. UI/labels: Rubik.
+   Типографика: Rubik во всём проекте (display + UI/labels).
    ============================================================ */
 
 :root{
@@ -26,7 +26,7 @@
   --ok:        #2f9e5e;
   --warn:      #c0492f;
 
-  --font-disp: "Unbounded", system-ui, sans-serif;
+  --font-disp: "Rubik", system-ui, sans-serif;
   --font-ui:   "Rubik", system-ui, sans-serif;
 
   --r-sm: 10px;
@@ -47,7 +47,7 @@
   --ok-bg:rgba(47,158,94,.12);
   --bad:#c0492f; --bad-bg:rgba(192,73,47,.12);
 
-  --side-w:248px;
+  --side-w:268px;
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -94,13 +94,52 @@ a{color:inherit;text-decoration:none}
 .sp-info{display:flex;flex-direction:column;line-height:1.3}
 .sp-info b{font-size:.9rem;color:var(--ink)}
 .sp-info em{font-style:normal;font-size:.7rem;color:var(--ink-mute)}
-.side-nav{display:flex;flex-direction:column;gap:4px}
+.side-nav{display:flex;flex-direction:column;gap:3px;min-height:0;overflow-y:auto;overflow-x:hidden;margin-right:-6px;padding-right:6px;scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+.side-nav::-webkit-scrollbar{width:5px}
+.side-nav::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:999px}
 .side-nav a{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-sm);font-size:.88rem;font-weight:600;color:var(--ink-2);transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease);position:relative}
-.side-nav a .ni{width:20px;text-align:center;color:var(--gold-deep);font-size:.95rem}
+.side-nav a .ni{width:20px;text-align:center;color:var(--gold-deep);font-size:.95rem;flex:0 0 auto}
 .side-nav a:hover{background:var(--surface-2);color:var(--ink)}
 .side-nav a.active{background:var(--navy);color:#fff;box-shadow:var(--sh-sm)}
 .side-nav a.active::before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:56%;border-radius:0 3px 3px 0;background:var(--gold)}
 .side-nav a.active .ni{color:var(--gold-hi)}
+
+/* группы с раскрывающимися подразделами */
+.nav-group{display:flex;flex-direction:column}
+.ng-head{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:none;background:none;cursor:pointer;
+  border-radius:var(--r-sm);font-family:inherit;font-size:.88rem;font-weight:600;color:var(--ink-2);text-align:left;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.ng-head .ni{width:20px;text-align:center;color:var(--gold-deep);font-size:.95rem;flex:0 0 auto}
+.ng-head .ng-title{flex:1 1 auto}
+.ng-head:hover{background:var(--surface-2);color:var(--ink)}
+.ng-head:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.ng-caret{flex:0 0 auto;font-size:.78rem;line-height:1;color:var(--ink-mute);transition:transform var(--t) var(--ease),color var(--t-fast) var(--ease)}
+.ng-head:hover .ng-caret{color:var(--ink-2)}
+.nav-group.open > .ng-head .ng-caret{transform:rotate(180deg)}
+.nav-group.has-active > .ng-head{color:var(--navy)}
+.nav-group.has-active > .ng-head .ng-caret{color:var(--gold-deep)}
+
+/* раскрытие: 0fr → 1fr, без замера высоты в JS */
+.ng-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--t) var(--ease)}
+.nav-group.open > .ng-body{grid-template-rows:1fr}
+.ng-body > .ng-inner{min-height:0;overflow:hidden}
+/* вертикальный padding тут запрещён: при 0fr border-box не сожмётся меньше своих
+   отступов и свёрнутая группа оставит пустую полосу. Отступы — марджинами ссылок. */
+.ng-inner{position:relative;display:flex;flex-direction:column;gap:2px;padding:0 0 0 11px;margin-left:17px}
+.ng-inner > a:first-child{margin-top:3px}
+.ng-inner > a:last-child{margin-bottom:7px}
+.ng-inner::before{content:"";position:absolute;left:0;top:6px;bottom:10px;width:2px;border-radius:2px;
+  background:linear-gradient(180deg,transparent,var(--line-2) 12%,var(--line-2) 88%,transparent)}
+.nav-group.has-active .ng-inner::before{background:linear-gradient(180deg,transparent,var(--gold) 12%,var(--gold) 88%,transparent)}
+.ng-inner a{gap:10px;padding:9px 11px;font-size:.83rem;font-weight:500}
+.ng-inner a .ni{width:16px;font-size:.85rem}
+.ng-inner a .nl{flex:1 1 auto;min-width:0}
+.ng-inner a.active{font-weight:600}
+/* пустой пока подраздел — полое кольцо, чтобы не путалось с кареткой группы */
+.ng-inner a.is-stub::after{content:"";width:6px;height:6px;border-radius:50%;flex:0 0 auto;
+  border:1px solid var(--line-2);transition:border-color var(--t-fast) var(--ease)}
+.ng-inner a.is-stub:hover::after{border-color:var(--gold-deep)}
+.ng-inner a.is-stub.active::after{border-color:var(--gold-hi)}
 .side-back{margin-top:auto;font-size:.78rem;color:var(--ink-mute);padding:12px 14px;border-radius:var(--r-sm);transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
 .side-back:hover{background:var(--surface-2);color:var(--navy)}
 
@@ -392,6 +431,18 @@ a{color:inherit;text-decoration:none}
 .play-dot{display:block;height:4px;border-radius:999px;background:linear-gradient(90deg,var(--gold,#e6b81c),var(--gold-deep,#a8810f))}
 .plays-table td:nth-child(4){font-family:var(--font-acc,var(--font-disp));font-weight:700;color:var(--ink)}
 
+/* ============================================================ SECTION STUB */
+.panel.stub{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:64px 24px 60px;position:relative}
+.panel.stub::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.stub-mark{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-size:1.8rem;color:var(--gold-deep);
+  background:var(--surface-2);border:1px solid var(--line);box-shadow:inset 0 2px 10px rgba(20,20,30,.04);margin-bottom:6px}
+.panel.stub h2{font-family:var(--font-disp);font-size:1.6rem;font-weight:600;color:var(--ink)}
+.panel.stub p{max-width:44ch;color:var(--ink-2);font-size:.94rem}
+.stub-back{margin-top:12px;font-size:.82rem;font-weight:600;color:var(--navy);border:1px solid var(--line-2);border-radius:999px;
+  padding:10px 20px;transition:background var(--t-fast) var(--ease),border-color var(--t-fast) var(--ease)}
+.stub-back:hover{background:var(--surface-2);border-color:var(--gold)}
+
 /* ============================================================ RESPONSIVE */
 @media(max-width:1080px){
   .panel-grid{grid-template-columns:1fr}
@@ -403,9 +454,10 @@ a{color:inherit;text-decoration:none}
   .side{position:static;width:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 16px}
   .side-brand{border:none;margin:0;padding:0}
   .side-profile{margin:0;order:3;width:100%}
-  .side-nav{flex-direction:row;flex-wrap:wrap;margin-left:auto}
-  .side-nav a{padding:9px 12px}
-  .side-back{margin:0;order:4}
+  .side-nav{width:100%;order:5;margin:0;padding:0;max-height:none;overflow:visible}
+  .side-nav a{padding:10px 12px}
+  .ng-head{padding:10px 12px}
+  .side-back{margin:0;order:6}
   .main{margin-left:0;padding:22px 16px 50px}
   .ledger-sum{grid-template-columns:1fr}
 }

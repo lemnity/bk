@@ -1,7 +1,7 @@
 /* ============================================================
    ТБДТ · Театральная касса — LIGHT
    Aesthetic: clean modern light theme — navy + gold accents.
-   Display: Unbounded. UI/labels: Rubik.
+   Типографика: Rubik во всём проекте (display + UI/labels).
    ============================================================ */
 
 :root{
@@ -26,7 +26,7 @@
   --ok:        #2f9e5e;
   --warn:      #c0492f;
 
-  --font-disp: "Unbounded", system-ui, sans-serif;
+  --font-disp: "Rubik", system-ui, sans-serif;
   --font-ui:   "Rubik", system-ui, sans-serif;
 
   --r-sm: 10px;

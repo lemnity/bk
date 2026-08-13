@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора</title>
+<meta name="description" content="Раздел кабинета администратора в наполнении." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=2" />
+</head>
+<body class="admin">
+
+<!-- раздел определяется параметром ?s=<page>; выставляем до рендера меню -->
+<script>
+  document.body.dataset.page = (new URLSearchParams(location.search).get("s") || "").replace(/[^a-z-]/gi, "");
+</script>
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb" id="crumb">ТБДТ · Кабинет</p>
+      <h1 id="pageTitle">Раздел</h1>
+    </div>
+  </header>
+
+  <section class="panel pad stub">
+    <div class="stub-mark" id="stubMark" aria-hidden="true">◇</div>
+    <h2>Раздел в наполнении</h2>
+    <p>Здесь появятся категории и информация этого раздела. Структура кабинета уже готова — наполняем по очереди.</p>
+    <a class="stub-back" href="admin.html">← В консоль</a>
+  </section>
+</main>
+
+<script src="admin-nav.js?v=1"></script>
+<script>
+  (function () {
+    const page = document.body.dataset.page;
+    const item = window.AdminNav && window.AdminNav.find(page);
+    if (!item) {
+      document.getElementById("pageTitle").textContent = "Раздел не найден";
+      document.getElementById("crumb").textContent = "ТБДТ · Кабинет";
+      return;
+    }
+    document.getElementById("pageTitle").textContent = item.label;
+    document.getElementById("stubMark").textContent = item.icon;
+    document.getElementById("crumb").textContent =
+      "ТБДТ · " + (item.group ? item.group.label : "Кабинет");
+    document.title = "ТБДТ · Кабинет администратора · " + item.label;
+  })();
+</script>
+</body>
+</html>

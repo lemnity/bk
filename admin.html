@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ТБДТ · Кабинет администратора · Обзор</title>
+<title>ТБДТ · Кабинет администратора · Консоль</title>
 <meta name="description" content="Демонстрационный кабинет администратора: цены, аналитика, бухгалтерия и финансы." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="admin.css?v=1" />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=2" />
 </head>
 <body class="admin" data-page="overview">
 
@@ -27,16 +27,7 @@
     </span>
   </div>
 
-  <nav class="side-nav" id="sideNav">
-    <a href="admin.html" class="active" data-tab="overview"><span class="ni">◉</span> Обзор</a>
-    <a href="prices.html" data-tab="prices"><span class="ni">₽</span> Цены</a>
-    <a href="halls.html" data-tab="halls"><span class="ni">▦</span> Залы</a>
-    <a href="events.html" data-tab="events"><span class="ni">◈</span> События</a>
-    <a href="actors.html" data-tab="actors"><span class="ni">☆</span> Актёры</a>
-    <a href="rental.html" data-tab="rental"><span class="ni">⌂</span> Аренда зала</a>
-    <a href="analytics.html" data-tab="analytics"><span class="ni">∿</span> Аналитика</a>
-    <a href="ledger.html" data-tab="ledger"><span class="ni">▤</span> Бухгалтерия</a>
-  </nav>
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
 
   <a class="side-back" href="index.html">← Вернуться на сайт</a>
 </aside>
@@ -46,7 +37,7 @@
   <header class="top">
     <div class="top-title">
       <p class="crumb">ТБДТ · Прощальные гастроли</p>
-      <h1 id="pageTitle">Обзор</h1>
+      <h1 id="pageTitle">Консоль</h1>
     </div>
     <div class="period" id="period" role="tablist" aria-label="Период">
       <button data-p="week">Неделя</button>
@@ -120,6 +111,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="admin-nav.js?v=1"></script>
 <script src="admin-store.js?v=1"></script>
 <script src="admin.js?v=1"></script>
 </body>
