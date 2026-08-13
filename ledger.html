@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Бухгалтерия</title>
+<meta name="description" content="Демонстрационный кабинет администратора: книга операций." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=1" />
+</head>
+<body class="admin" data-page="ledger">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav">
+    <a href="admin.html" data-tab="overview"><span class="ni">◉</span> Обзор</a>
+    <a href="prices.html" data-tab="prices"><span class="ni">₽</span> Цены</a>
+    <a href="halls.html" data-tab="halls"><span class="ni">▦</span> Залы</a>
+    <a href="events.html" data-tab="events"><span class="ni">◈</span> События</a>
+    <a href="actors.html" data-tab="actors"><span class="ni">☆</span> Актёры</a>
+    <a href="rental.html" data-tab="rental"><span class="ni">⌂</span> Аренда зала</a>
+    <a href="analytics.html" data-tab="analytics"><span class="ni">∿</span> Аналитика</a>
+    <a href="ledger.html" class="active" data-tab="ledger"><span class="ni">▤</span> Бухгалтерия</a>
+  </nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Прощальные гастроли</p>
+      <h1 id="pageTitle">Бухгалтерия</h1>
+    </div>
+  </header>
+
+  <!-- ░ LEDGER ░ -->
+  <div class="tab" data-panel="ledger">
+    <section class="ledger-sum" id="ledgerSum"></section>
+    <section class="panel pad">
+      <div class="panel-head">
+        <h2>Книга операций</h2>
+        <div class="ledger-actions">
+          <button class="btn btn-plain" id="buildReport">⤓ Сформировать отчёт</button>
+          <button class="btn btn-gold" id="addExpense">+ Добавить расход</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="dtable ledger-table">
+          <thead>
+            <tr><th>Дата</th><th>Операция</th><th>Категория</th><th class="num">Сумма, ₽</th><th>Статус</th></tr>
+          </thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-store.js?v=1"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>

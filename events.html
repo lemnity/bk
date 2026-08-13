@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · События</title>
+<meta name="description" content="Демонстрационный кабинет администратора: каталог спектаклей." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=1" />
+</head>
+<body class="admin" data-page="events">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav">
+    <a href="admin.html" data-tab="overview"><span class="ni">◉</span> Обзор</a>
+    <a href="prices.html" data-tab="prices"><span class="ni">₽</span> Цены</a>
+    <a href="halls.html" data-tab="halls"><span class="ni">▦</span> Залы</a>
+    <a href="events.html" class="active" data-tab="events"><span class="ni">◈</span> События</a>
+    <a href="actors.html" data-tab="actors"><span class="ni">☆</span> Актёры</a>
+    <a href="rental.html" data-tab="rental"><span class="ni">⌂</span> Аренда зала</a>
+    <a href="analytics.html" data-tab="analytics"><span class="ni">∿</span> Аналитика</a>
+    <a href="ledger.html" data-tab="ledger"><span class="ni">▤</span> Бухгалтерия</a>
+  </nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Прощальные гастроли</p>
+      <h1 id="pageTitle">События</h1>
+    </div>
+  </header>
+
+  <!-- ░ EVENTS ░ -->
+  <div class="tab" data-panel="events">
+    <section class="panel pad">
+      <div class="panel-head">
+        <h2>Каталог спектаклей</h2>
+        <button class="btn btn-gold" id="newEventBtn">+ Добавить спектакль</button>
+      </div>
+      <p class="panel-note">Афиша текущего репертуара. Добавляйте спектакли, указывайте зал, дату показа и возрастной ценз.</p>
+
+      <form class="newevent" id="newEventForm" hidden>
+        <label>Название <input name="title" required placeholder="Вишнёвый сад" /></label>
+        <label>Жанр <input name="genre" list="genreList" placeholder="Драма" /></label>
+        <datalist id="genreList">
+          <option value="Драма"></option><option value="Комедия"></option>
+          <option value="Трагедия"></option><option value="Мюзикл"></option>
+          <option value="Балет"></option><option value="Опера"></option>
+          <option value="Детский"></option>
+        </datalist>
+        <label>Дата показа <input name="date" type="date" /></label>
+        <label>Зал <select name="hall" id="eventHallSelect"></select></label>
+        <label>Возраст
+          <select name="age">
+            <option>0+</option><option>6+</option><option selected>12+</option>
+            <option>16+</option><option>18+</option>
+          </select>
+        </label>
+        <label>Статус
+          <select name="status">
+            <option value="sale" selected>В продаже</option>
+            <option value="soon">Скоро</option>
+            <option value="archive">Архив</option>
+          </select>
+        </label>
+        <button class="btn btn-gold" type="submit">Добавить в афишу</button>
+        <button class="btn btn-plain" type="button" id="cancelEvent">Отмена</button>
+      </form>
+
+      <div class="events-grid" id="eventsGrid"></div>
+    </section>
+  </div>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-store.js?v=1"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>

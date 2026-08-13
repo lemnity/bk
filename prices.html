@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Цены</title>
+<meta name="description" content="Демонстрационный кабинет администратора: управление ценами." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=1" />
+</head>
+<body class="admin" data-page="prices">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav">
+    <a href="admin.html" data-tab="overview"><span class="ni">◉</span> Обзор</a>
+    <a href="prices.html" class="active" data-tab="prices"><span class="ni">₽</span> Цены</a>
+    <a href="halls.html" data-tab="halls"><span class="ni">▦</span> Залы</a>
+    <a href="events.html" data-tab="events"><span class="ni">◈</span> События</a>
+    <a href="actors.html" data-tab="actors"><span class="ni">☆</span> Актёры</a>
+    <a href="rental.html" data-tab="rental"><span class="ni">⌂</span> Аренда зала</a>
+    <a href="analytics.html" data-tab="analytics"><span class="ni">∿</span> Аналитика</a>
+    <a href="ledger.html" data-tab="ledger"><span class="ni">▤</span> Бухгалтерия</a>
+  </nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Прощальные гастроли</p>
+      <h1 id="pageTitle">Цены</h1>
+    </div>
+    <div class="period" id="period" role="tablist" aria-label="Период">
+      <button data-p="week">Неделя</button>
+      <button data-p="month" class="active">Месяц</button>
+      <button data-p="season">Сезон</button>
+    </div>
+  </header>
+
+  <!-- ░ PRICES ░ -->
+  <div class="tab" data-panel="prices">
+    <section class="panel pad">
+      <div class="panel-head">
+        <h2>Управление ценами</h2>
+        <button class="btn btn-gold" id="addTier">+ Добавить тариф</button>
+      </div>
+      <p class="panel-note">Измените стоимость зон — прогноз выручки и финансовый статус пересчитаются автоматически.</p>
+
+      <div class="table-wrap">
+        <table class="dtable price-table">
+          <thead>
+            <tr><th>Зона</th><th>Цвет</th><th class="num">Мест</th><th class="num">Продано</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th><th></th></tr>
+          </thead>
+          <tbody id="priceBody"></tbody>
+        </table>
+      </div>
+
+      <div class="price-foot">
+        <div class="pf-block">
+          <span>Прогноз выручки</span>
+          <b id="projRevenue">—</b>
+        </div>
+        <div class="pf-block">
+          <span>План на сезон</span>
+          <b id="planRevenue">—</b>
+        </div>
+        <div class="pf-status" id="priceStatus" data-state="up">
+          <span class="pfs-dot"></span><span id="priceStatusText">—</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-store.js?v=1"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>

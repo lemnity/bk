@@ -1,0 +1,13 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/overview", "destination": "/admin.html" },
+    { "source": "/prices", "destination": "/admin.html" },
+    { "source": "/halls", "destination": "/admin.html" },
+    { "source": "/events", "destination": "/admin.html" },
+    { "source": "/actors", "destination": "/admin.html" },
+    { "source": "/rental", "destination": "/admin.html" },
+    { "source": "/analytics", "destination": "/admin.html" },
+    { "source": "/ledger", "destination": "/admin.html" }
+  ]
+}

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Покупка билетов</title>
+<meta name="description" content="Тюменский Большой драматический театр — выбор мест и покупка билетов на спектакль «Прощальные гастроли»." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=1" />
+</head>
+<body>
+
+<!-- ░░░ HEADER ░░░ -->
+<header class="site-head">
+  <div class="head-inner">
+    <a class="brand" href="#" aria-label="Театр Либерта">
+      <img class="brand-logo" src="assets/logo.png" alt="Театр Либерта" />
+    </a>
+    <nav class="head-nav">
+      <a href="#afisha">Афиша</a>
+      <a href="#hall">Выбор мест</a>
+      <a href="#about">О театре</a>
+      <a href="admin.html" class="nav-admin">Кабинет</a>
+    </nav>
+    <button class="head-cart" id="headCartBtn" aria-label="Корзина">
+      <span class="hc-icon" aria-hidden="true">◷</span>
+      <span class="hc-count" id="headCartCount">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- ░░░ HERO / PLAYBILL — full-bleed photo, copy on a legible scrim ░░░ -->
+<section class="hero">
+  <div class="hero-photo" aria-hidden="true"></div>
+  <div class="hero-scrim" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <p class="kicker">Премьера сезона · 18+</p>
+
+      <h1 class="hero-title">
+        <span class="ht-line ht-1">Прощальные</span>
+        <span class="ht-line ht-2">гастроли</span>
+      </h1>
+
+      <p class="hero-author">комедия в двух действиях · режиссёр Лев&nbsp;Эренбург</p>
+
+      <div class="hero-actions">
+        <a href="#afisha" class="btn btn-primary">Выбрать билеты <span aria-hidden="true">→</span></a>
+        <a href="#about" class="btn btn-ghost">О спектакле</a>
+      </div>
+
+      <dl class="hero-facts">
+        <div><dt>Дата</dt><dd>8 июня 2026</dd></div>
+        <div><dt>Начало</dt><dd>17:00</dd></div>
+        <div><dt>Длительность</dt><dd>3 ч 20 мин</dd></div>
+        <div><dt>Сцена</dt><dd>Большой зал</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<!-- ░░░ DATES ░░░ -->
+<section class="dates" id="afisha">
+  <div class="section-head" data-reveal>
+    <div class="sh-left">
+      <p class="section-eyebrow"><span class="se-num">01</span> Афиша</p>
+      <h2 class="section-title">Ближайшие даты</h2>
+    </div>
+    <p class="section-note">Выберите дату и время сеанса</p>
+  </div>
+  <div class="date-rail" id="dateRail" role="tablist" aria-label="Даты спектакля"></div>
+  <div class="session-bar" data-reveal>
+    <div class="session-info">
+      <span class="si-date" id="sessionDate">8 июня '26 в 17:00</span>
+      <span class="si-hall">ТБДТ · Большой зал</span>
+    </div>
+    <div class="session-times" id="sessionTimes"></div>
+  </div>
+</section>
+
+<!-- ░░░ HALL / SEAT MAP ░░░ -->
+<section class="hall" id="hall">
+  <div class="section-head" data-reveal>
+    <div class="sh-left">
+      <p class="section-eyebrow"><span class="se-num">02</span> Зал</p>
+      <h2 class="section-title">Выбор мест</h2>
+    </div>
+    <p class="section-note">Большой зал · нажмите на место на схеме</p>
+  </div>
+  <div class="hall-shell">
+    <div class="hall-main" data-reveal>
+      <div class="hall-toolbar">
+        <button class="hall-expand" id="expandHallBtn" type="button" aria-pressed="false">
+          <span class="he-icon" aria-hidden="true">⤢</span>
+          <span class="he-text">Раскрыть по ширине</span>
+        </button>
+      </div>
+      <div class="legend" id="legend"></div>
+
+      <div class="stage-wrap">
+        <div class="screen-glow" aria-hidden="true"></div>
+        <div class="stage">Сцена</div>
+      </div>
+
+      <div class="seatmap-scroll">
+        <div class="hall-plan" id="hallPlan" role="group" aria-label="План зала"></div>
+      </div>
+
+      <div class="hall-hint">
+        <span class="hint-dot dot-free"></span> свободно
+        <span class="hint-dot dot-sel"></span> выбрано вами
+        <span class="hint-dot dot-busy"></span> занято
+        <em>Нажмите на место, чтобы добавить его в заказ</em>
+      </div>
+    </div>
+
+    <!-- ORDER SUMMARY -->
+    <aside class="order" id="order" aria-label="Ваш заказ" data-reveal>
+      <div class="order-card">
+        <header class="order-head">
+          <h3>Ваш заказ</h3>
+          <span class="order-show">Прощальные гастроли · 8 июня 17:00</span>
+        </header>
+
+        <ul class="order-list" id="orderList">
+          <li class="order-empty" id="orderEmpty">
+            <span class="oe-mark" aria-hidden="true">✺</span>
+            Места ещё не выбраны.<br>Коснитесь схемы зала слева.
+          </li>
+        </ul>
+
+        <div class="order-totals">
+          <div class="ot-row">
+            <span>Билетов</span><span id="totalCount">0</span>
+          </div>
+          <div class="ot-row ot-fee">
+            <span>Сервисный сбор</span><span id="totalFee">0 ₽</span>
+          </div>
+          <div class="ot-row ot-grand">
+            <span>Итого</span><span id="totalSum">0 ₽</span>
+          </div>
+          <div class="ot-row ot-bonus">
+            <span class="ot-bonus-label">
+              Ваш бонус 5%
+              <span class="hint">
+                <button class="hint-btn" type="button" aria-label="Подробнее о бонусах">?</button>
+                <span class="hint-pop" role="tooltip">Бонусы — 5% от стоимости билетов. Их можно потратить при покупке билета: оплатить ими часть следующего заказа.</span>
+              </span>
+            </span>
+            <span id="totalBonus">+0 ₽</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="checkoutBtn" disabled>
+          Оформить заказ
+        </button>
+        <p class="order-fineprint">Бронь действует 15&nbsp;минут после оформления</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ░░░ ABOUT STRIP ░░░ -->
+<section class="about" id="about">
+  <div class="section-head" data-reveal>
+    <div class="sh-left">
+      <p class="section-eyebrow"><span class="se-num">03</span> О театре</p>
+      <h2 class="section-title">Тюменский БДТ</h2>
+    </div>
+    <p class="section-note">Сезон XXVII</p>
+  </div>
+  <div class="about-grid">
+    <p class="about-quote" data-reveal>«Пока в зале горит хотя&nbsp;бы одна лампа — занавес ещё не опущен.»</p>
+    <div class="about-cols">
+      <div data-reveal><h4>Адрес</h4><p>г.&nbsp;Тюмень, площадь&nbsp;Театральная,&nbsp;1<br>метро не требуется</p></div>
+      <div data-reveal><h4>Касса</h4><p>ежедневно 11:00–20:00<br>+7&nbsp;(3452)&nbsp;00-00-00</p></div>
+      <div data-reveal><h4>Возврат</h4><p>не позднее чем за 3&nbsp;дня<br>до&nbsp;начала спектакля</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ░░░ MORE THIS MONTH ░░░ -->
+<section class="more" id="more">
+  <div class="section-head" data-reveal>
+    <div class="sh-left">
+      <p class="section-eyebrow"><span class="se-num">04</span> Репертуар</p>
+      <h2 class="section-title">Ещё в этом месяце</h2>
+    </div>
+    <p class="section-note">Тюменский БДТ · июнь 2026</p>
+  </div>
+  <div class="more-grid" id="moreGrid"></div>
+</section>
+
+<footer class="site-foot">
+  <span>© 2026 Тюменский Большой Драматический Театр</span>
+  <span class="foot-dot">·</span>
+  <span>Сделано с любовью к сцене</span>
+</footer>
+
+<!-- ░░░ CHECKOUT MODAL ░░░ -->
+<div class="modal" id="checkoutModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <button class="modal-x" data-close aria-label="Закрыть">✕</button>
+
+    <div class="modal-body" id="checkoutView">
+      <p class="kicker kicker-dark">Шаг 2 из 2 · Оформление</p>
+      <h2 id="modalTitle" class="modal-title">Почти на сцене</h2>
+
+      <div class="modal-cols">
+        <form class="ck-form" id="ckForm" novalidate>
+          <label class="field">
+            <span>Имя и фамилия</span>
+            <input type="text" name="name" required placeholder="Степан Верховенский" />
+          </label>
+          <div class="field-row">
+            <label class="field">
+              <span>E-mail</span>
+              <input type="email" name="email" required placeholder="you@theatre.ru" />
+            </label>
+            <label class="field">
+              <span>Телефон</span>
+              <input type="tel" name="phone" required placeholder="+7 ___ ___-__-__" />
+            </label>
+          </div>
+
+          <fieldset class="pay">
+            <legend>Оплата</legend>
+            <label class="pay-opt"><input type="radio" name="pay" value="card" checked /><span>Банковская карта</span></label>
+            <label class="pay-opt"><input type="radio" name="pay" value="sbp" /><span>СБП</span></label>
+            <label class="pay-opt"><input type="radio" name="pay" value="box" /><span>В кассе театра</span></label>
+          </fieldset>
+
+          <label class="agree">
+            <input type="checkbox" name="agree" required />
+            <span>Согласен с правилами продажи и возврата билетов</span>
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-block btn-pay" id="payBtn">
+            Оплатить <span id="payAmount">0 ₽</span>
+          </button>
+        </form>
+
+        <aside class="ck-summary">
+          <h4>Ваши места</h4>
+          <ul id="ckSeatList" class="ck-seatlist"></ul>
+          <div class="ck-total">
+            <span>К оплате</span><strong id="ckTotal">0 ₽</strong>
+          </div>
+          <p class="ck-note">Электронные билеты придут на почту сразу после оплаты.</p>
+        </aside>
+      </div>
+    </div>
+
+    <!-- success -->
+    <div class="modal-body modal-success" id="successView" hidden>
+      <div class="ticket">
+        <div class="ticket-perf">
+          <span class="kicker kicker-dark">Билет подтверждён</span>
+          <h2>Прощальные гастроли</h2>
+          <p>8 июня 2026 · 17:00 · Большой зал</p>
+        </div>
+        <div class="ticket-tear" aria-hidden="true"></div>
+        <div class="ticket-seats">
+          <p class="ts-label">Ваши места</p>
+          <p class="ts-list" id="successSeats">—</p>
+          <p class="ts-paid"><span>Оплачено</span><strong id="successTotal">0 ₽</strong></p>
+        </div>
+      </div>
+      <p class="success-msg">Билеты отправлены на вашу почту. До встречи в зале!</p>
+      <button class="btn btn-ghost btn-block" data-close>Вернуться к афише</button>
+    </div>
+  </div>
+</div>
+
+<!-- floating seat tooltip (escapes the scroll container) -->
+<div class="seat-tip" id="seatTip" aria-hidden="true"></div>
+
+<!-- live toast -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js?v=1"></script>
+</body>
+</html>

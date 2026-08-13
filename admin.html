@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Обзор</title>
+<meta name="description" content="Демонстрационный кабинет администратора: цены, аналитика, бухгалтерия и финансы." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=1" />
+</head>
+<body class="admin" data-page="overview">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav">
+    <a href="admin.html" class="active" data-tab="overview"><span class="ni">◉</span> Обзор</a>
+    <a href="prices.html" data-tab="prices"><span class="ni">₽</span> Цены</a>
+    <a href="halls.html" data-tab="halls"><span class="ni">▦</span> Залы</a>
+    <a href="events.html" data-tab="events"><span class="ni">◈</span> События</a>
+    <a href="actors.html" data-tab="actors"><span class="ni">☆</span> Актёры</a>
+    <a href="rental.html" data-tab="rental"><span class="ni">⌂</span> Аренда зала</a>
+    <a href="analytics.html" data-tab="analytics"><span class="ni">∿</span> Аналитика</a>
+    <a href="ledger.html" data-tab="ledger"><span class="ni">▤</span> Бухгалтерия</a>
+  </nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Прощальные гастроли</p>
+      <h1 id="pageTitle">Обзор</h1>
+    </div>
+    <div class="period" id="period" role="tablist" aria-label="Период">
+      <button data-p="week">Неделя</button>
+      <button data-p="month" class="active">Месяц</button>
+      <button data-p="season">Сезон</button>
+    </div>
+  </header>
+
+  <!-- finance status banner -->
+  <div class="status-banner" id="statusBanner" data-state="up">
+    <div class="sb-mark" id="sbMark" aria-hidden="true">▲</div>
+    <div class="sb-text">
+      <strong id="sbTitle">Продажи растут</strong>
+      <span id="sbDesc">Выручка выше плана — спектакль уверенно собирает зал.</span>
+    </div>
+    <div class="sb-fig">
+      <b id="sbValue">+0%</b>
+      <em>к прошлому периоду</em>
+    </div>
+  </div>
+
+  <!-- ░ OVERVIEW ░ -->
+  <div class="tab" data-panel="overview">
+    <div class="ov-filter" id="ovFilter" role="tablist" aria-label="Режим статистики">
+      <button data-ov="general" class="active">Общая статистика</button>
+      <button data-ov="plays">По спектаклям</button>
+    </div>
+
+    <!-- general statistics -->
+    <div class="ov-view" data-ov="general">
+      <section class="kpis" id="kpis"></section>
+
+      <section class="panel-grid">
+        <div class="panel pad chart-panel">
+          <div class="panel-head">
+            <h2>Выручка по дням</h2>
+            <span class="ph-total" id="revTotal">—</span>
+          </div>
+          <div class="chart" id="revChart"></div>
+        </div>
+        <div class="panel pad">
+          <div class="panel-head"><h2>Заполняемость зала</h2></div>
+          <div class="gauge" id="occGauge"></div>
+          <ul class="occ-list" id="occList"></ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- per-play statistics -->
+    <div class="ov-view" data-ov="plays" hidden>
+      <section class="kpis" id="playKpis"></section>
+      <section class="panel pad">
+        <div class="panel-head">
+          <h2>Статистика по спектаклям</h2>
+          <span class="ph-total" id="playsTotal">—</span>
+        </div>
+        <p class="panel-note">Выручка, проданные билеты, средний чек и заполняемость по каждому спектаклю репертуара за период.</p>
+        <div class="table-wrap">
+          <table class="dtable plays-table">
+            <thead>
+              <tr><th>Спектакль</th><th class="num">Показов</th><th class="num">Билетов</th><th class="num">Выручка, ₽</th><th class="num">Ср. чек, ₽</th><th>Заполняемость</th></tr>
+            </thead>
+            <tbody id="playsBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-store.js?v=1"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>

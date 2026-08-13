@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Аренда зала</title>
+<meta name="description" content="Демонстрационный кабинет администратора: график аренды залов." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=1" />
+</head>
+<body class="admin" data-page="rental">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav">
+    <a href="admin.html" data-tab="overview"><span class="ni">◉</span> Обзор</a>
+    <a href="prices.html" data-tab="prices"><span class="ni">₽</span> Цены</a>
+    <a href="halls.html" data-tab="halls"><span class="ni">▦</span> Залы</a>
+    <a href="events.html" data-tab="events"><span class="ni">◈</span> События</a>
+    <a href="actors.html" data-tab="actors"><span class="ni">☆</span> Актёры</a>
+    <a href="rental.html" class="active" data-tab="rental"><span class="ni">⌂</span> Аренда зала</a>
+    <a href="analytics.html" data-tab="analytics"><span class="ni">∿</span> Аналитика</a>
+    <a href="ledger.html" data-tab="ledger"><span class="ni">▤</span> Бухгалтерия</a>
+  </nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Прощальные гастроли</p>
+      <h1 id="pageTitle">Аренда зала</h1>
+    </div>
+  </header>
+
+  <!-- ░ RENTAL ░ -->
+  <div class="tab" data-panel="rental">
+    <section class="ledger-sum" id="rentalSum"></section>
+
+    <section class="panel pad">
+      <div class="panel-head">
+        <h2>График аренды · <span id="rentalMonth">июнь 2026</span></h2>
+        <button class="btn btn-gold" id="newRentalBtn">+ Добавить бронь</button>
+      </div>
+      <p class="panel-note">Диаграмма Ганта по дням и залам: свои спектакли, гастроли других театров и коммерческая аренда. В один день в разных залах могут идти разные показы. Пустые промежутки — свободные даты, куда можно поставить аренду.</p>
+
+      <form class="newevent" id="newRentalForm" hidden>
+        <label>Арендатор / театр <input name="org" required placeholder="Малый театр (Москва)" /></label>
+        <label>Событие <input name="title" placeholder="Гастроли · «Горе от ума»" /></label>
+        <label>Зал <select name="hall" id="rentalHallSelect"></select></label>
+        <label>Тип
+          <select name="type">
+            <option value="own">Свой спектакль</option>
+            <option value="tour" selected>Гастроли</option>
+            <option value="rent">Аренда / мероприятие</option>
+          </select>
+        </label>
+        <label>Дата (день) <input name="start" type="number" min="1" max="30" value="1" /></label>
+        <label>Дней <input name="days" type="number" min="1" max="30" value="2" /></label>
+        <label>Сумма, ₽ <input name="amount" type="number" min="0" step="5000" value="150000" /></label>
+        <label>Статус
+          <select name="status">
+            <option value="confirmed" selected>Подтверждено</option>
+            <option value="option">Бронь</option>
+            <option value="request">Запрос</option>
+          </select>
+        </label>
+        <button class="btn btn-gold" type="submit">Добавить бронь</button>
+        <button class="btn btn-plain" type="button" id="cancelRental">Отмена</button>
+      </form>
+
+      <div class="gantt-scroll">
+        <div class="gantt" id="rentalGantt"></div>
+      </div>
+      <div class="gantt-legend">
+        <span><i class="gl-sw own"></i> Свой спектакль</span>
+        <span><i class="gl-sw tour"></i> Гастроли</span>
+        <span><i class="gl-sw rent"></i> Аренда / мероприятие</span>
+        <span><i class="gl-sw pending"></i> Бронь / запрос</span>
+      </div>
+
+      <div class="table-wrap" style="margin-top:22px">
+        <table class="dtable rental-table">
+          <thead>
+            <tr><th>Арендатор</th><th>Событие</th><th>Зал</th><th>Даты</th><th>Тип</th><th class="num">Сумма, ₽</th><th>Статус</th><th></th></tr>
+          </thead>
+          <tbody id="rentalBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-store.js?v=1"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>
