@@ -74,7 +74,9 @@
   const S = window.AdminStore.state;
 
   const PLAN = 1_150_000; // план выручки на сезон, ₽
-  const EXTRA_PALETTE = ["#8ce05f", "#e9943f", "#46d6e0", "#b7e05f", "#e8c63f"];
+  /* запасные цвета тарифов — из той же светлой шкалы: по заливке
+     зоны набирают тёмный текст, поэтому насыщенных сюда не класть */
+  const EXTRA_PALETTE = ["#C4DAE9", "#AAC5E8", "#95A5E6", "#D2E2EC", "#9785DD"];
 
   const EXPENSE_POOL = [
     { op: "Свет и звук · подрядчик", cat: "Техника",   amount: -47_800 },
@@ -96,7 +98,9 @@
 
   /* repertoire: theatre performances catalogue (demo) */
   const STATUS_LABEL = { sale: "В продаже", soon: "Скоро", archive: "Архив" };
-  const EVENT_HUES = [["#2c2e5c", "#5b5fae"], ["#a8810f", "#f5cd33"], ["#7a2f4f", "#e04f8c"], ["#1f5a4c", "#46c35a"], ["#7a3a1f", "#e9943f"]];
+  /* дуотоны афиш: тёмный → средний. Светлее не делать — поверх
+     лежит белая литера постера, ей нужен контраст не ниже 3:1 */
+  const EVENT_HUES = [["#132437", "#44556E"], ["#0F2A53", "#3E67A8"], ["#173A6D", "#5B7BB5"], ["#2A2F55", "#5F659A"], ["#1E3A4F", "#4E7186"]];
 
   /* troupe: theatre ensemble — salary, per-show fee, repertoire load (demo) */
   const ACTOR_MAX_LOAD = 12; // спектаклей = 100% занятости
@@ -164,7 +168,7 @@
     const r = 66, c = 2 * Math.PI * r, off = c * (1 - p);
     return `<svg viewBox="0 0 170 170">
       <defs><linearGradient id="gradGauge" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="#f5cd33"/><stop offset="100%" stop-color="#a8810f"/>
+        <stop offset="0%" stop-color="#5B7BB5"/><stop offset="100%" stop-color="#173A6D"/>
       </linearGradient></defs>
       <g transform="rotate(-90 85 85)">
         <circle class="g-track" cx="85" cy="85" r="${r}"/>
@@ -209,7 +213,7 @@
 
     // revenue chart
     $("#revTotal").textContent = kop(total);
-    $("#revChart").innerHTML = lineChart(d.revenue, d.labels, "#2c2e5c", kop);
+    $("#revChart").innerHTML = lineChart(d.revenue, d.labels, "#173A6D", kop);
 
     // occupancy
     $("#occGauge").innerHTML = gauge(d.occ);
@@ -222,7 +226,11 @@
     if (!b) return;
     const up = delta >= 0;
     b.dataset.state = up ? "up" : "down";
-    $("#sbMark").textContent = up ? "▲" : "▼";
+    /* стрелка направления — inline SVG: значок дублирует смысл цвета,
+     поэтому он обязателен (одним цветом состояние передавать нельзя) */
+    $("#sbMark").innerHTML = up
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 19V5M6 11l6-6 6 6"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 5v14M6 13l6 6 6-6"/></svg>';
     $("#sbTitle").textContent = up ? "Продажи растут" : "Просадка продаж";
     $("#sbDesc").textContent = up
       ? "Выручка выше прошлого периода — спектакль уверенно собирает зал."
@@ -286,7 +294,7 @@
     if ($("#avgChart")) {
       const avgNow = d.avg[d.avg.length - 1];
       $("#avgTotal").textContent = rub(avgNow);
-      $("#avgChart").innerHTML = lineChart(d.avg, d.labels, "#a8810f", rub);
+      $("#avgChart").innerHTML = lineChart(d.avg, d.labels, "#44556E", rub);
     }
     if (!$("#zoneBars")) return;
 
@@ -695,7 +703,7 @@
     AdminStore.update(s => {
       s.TIERS.push({
         zone: "Новая зона " + n,
-        color: EXTRA_PALETTE[(n - 4 + EXTRA_PALETTE.length) % EXTRA_PALETTE.length] || "#8ce05f",
+        color: EXTRA_PALETTE[(n - 4 + EXTRA_PALETTE.length) % EXTRA_PALETTE.length] || "#C4DAE9",
         seats: 60, sold: 30, price: 2000,
       });
     });

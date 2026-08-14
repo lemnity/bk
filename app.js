@@ -7,19 +7,27 @@
 (() => {
   "use strict";
 
-  /* ---------- price tiers (₽) → colour, matching legend ---------- */
+  /* ---------- price tiers (₽) → colour, matching legend ----------
+     Цена — величина ПОРЯДКОВАЯ, поэтому шкала последовательная
+     (холодная: лёд → синий → индиго), а не радуга: радуга не читается
+     как «дороже/дешевле», и на трёх ступенях из одиннадцати она
+     роняла контраст номера места ниже нормы WCAG AA.
+     Яркость СТРОГО убывает (0.821 → 0.286), поэтому порядок тарифа
+     читается и без цветового зрения. Номер набран --ink (#132437)
+     и держит не меньше 5.03:1 на самой тёмной ступени.
+     Менять ступени только вместе с пересчётом контраста. */
   const TIERS = [
-    { price: 1000, color: "#2f37c4" },
-    { price: 1500, color: "#3f8fe0" },
-    { price: 2000, color: "#46d6e0" },
-    { price: 2500, color: "#5fd98a" },
-    { price: 3000, color: "#46c35a" },
-    { price: 3500, color: "#8ce05f" },
-    { price: 4000, color: "#b7e05f" },
-    { price: 4500, color: "#e9e15f" },
-    { price: 5000, color: "#e8943f" },
-    { price: 5500, color: "#e0533f" },
-    { price: 6000, color: "#e04f8c" },
+    { price: 1000, color: "#E0ECF0" },
+    { price: 1500, color: "#D2E2EC" },
+    { price: 2000, color: "#C4DAE9" },
+    { price: 2500, color: "#B6CFE8" },
+    { price: 3000, color: "#AAC5E8" },
+    { price: 3500, color: "#A0BBE7" },
+    { price: 4000, color: "#99B1E7" },
+    { price: 4500, color: "#95A5E6" },
+    { price: 5000, color: "#929BE4" },
+    { price: 5500, color: "#9290E1" },
+    { price: 6000, color: "#9785DD" },
   ];
   const SERVICE_FEE = 200; // ₽ per ticket
   const BONUS_RATE = 0.05; // 5% бонусов от стоимости билетов
@@ -463,10 +471,12 @@
 
   /* ============================================================ MORE THIS MONTH */
   const REPERTOIRE = [
-    { title: "Чайка",        genre: "Комедия",  date: "18 июня · 19:00", hall: "Большой зал", age: "12+", price: 1200, hue: ["#2c2e5c", "#5b5fae"], img: "assets/repertoire/play-1.webp" },
-    { title: "Вишнёвый сад", genre: "Драма",    date: "21 июня · 18:00", hall: "Большой зал", age: "12+", price: 1500, hue: ["#7a2f4f", "#e04f8c"], img: "assets/repertoire/play-2.webp" },
-    { title: "Ревизор",      genre: "Комедия",  date: "25 июня · 19:00", hall: "Малая сцена", age: "16+", price: 900,  hue: ["#1f5a4c", "#46c35a"], img: "assets/repertoire/play-3.webp" },
-    { title: "Щелкунчик",    genre: "Балет",    date: "28 июня · 12:00", hall: "Большой зал", age: "0+",  price: 1800, hue: ["#7a3a1f", "#e9943f"], img: "assets/repertoire/play-4.webp" },
+    /* hue — дуотон подложки афиши (тёмный → средний): поверх лежит
+       белая литера, поэтому светлый конец не выводим выше среднего тона */
+    { title: "Чайка",        genre: "Комедия",  date: "18 июня · 19:00", hall: "Большой зал", age: "12+", price: 1200, hue: ["#132437", "#44556E"], img: "assets/repertoire/play-1.webp" },
+    { title: "Вишнёвый сад", genre: "Драма",    date: "21 июня · 18:00", hall: "Большой зал", age: "12+", price: 1500, hue: ["#0F2A53", "#3E67A8"], img: "assets/repertoire/play-2.webp" },
+    { title: "Ревизор",      genre: "Комедия",  date: "25 июня · 19:00", hall: "Малая сцена", age: "16+", price: 900,  hue: ["#173A6D", "#5B7BB5"], img: "assets/repertoire/play-3.webp" },
+    { title: "Щелкунчик",    genre: "Балет",    date: "28 июня · 12:00", hall: "Большой зал", age: "0+",  price: 1800, hue: ["#2A2F55", "#5F659A"], img: "assets/repertoire/play-4.webp" },
   ];
 
   function buildMore() {

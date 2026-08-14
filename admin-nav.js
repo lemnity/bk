@@ -19,12 +19,27 @@
     {
       id: "admin", label: "Администрирование", icon: "▥",
       items: [
-        { page: "events", label: "События",        icon: "◈", href: "events.html" },
-        { page: "actors", label: "Актёры",         icon: "☆", href: "actors.html" },
-        { page: "halls",  label: "Залы",           icon: "▦", href: "halls.html"  },
-        { page: "rental", label: "Аренда зала",    icon: "⌂", href: "rental.html" },
-        { page: "users",  label: "Пользователи",   icon: "◍" },
-        { page: "roles",  label: "Роли и доступы", icon: "⊘" },
+        { page: "venues",       label: "Площадки",               icon: "◫", href: "venues.html" },
+        { page: "halls",        label: "Залы",                   icon: "▦", href: "halls.html"  },
+        { page: "rental",       label: "Аренда зала",            icon: "⌂", href: "rental.html" },
+        { page: "shows",        label: "Представления",          icon: "≡" },
+        { page: "actors",       label: "Актёры",                 icon: "☆", href: "actors.html" },
+        { page: "goods",        label: "Товары",                 icon: "▨" },
+        { page: "events",       label: "События",                icon: "◈", href: "events.html" },
+        { page: "orders",       label: "Заказы",                 icon: "≣" },
+        { page: "reports",      label: "Отчёты",                 icon: "▧" },
+        { page: "bank-orders",  label: "Заказы на р/с",          icon: "№" },
+        { page: "distributors", label: "Распространители",       icon: "⇄" },
+        { page: "quotas",       label: "Квоты",                  icon: "◔" },
+        { page: "cashiers",     label: "Кассиры",                icon: "◧" },
+        { page: "blanks",       label: "Учёт билетных бланков",  icon: "▯" },
+        { page: "users",        label: "Пользователи",           icon: "◍" },
+        { page: "roles",        label: "Роли и доступы",         icon: "⊘" },
+        { page: "sellers",      label: "Продавцы билетов",       icon: "$" },
+        { page: "analytics",    label: "Аналитика",              icon: "∿", href: "analytics.html" },
+        { page: "organizers",   label: "Организаторы",           icon: "◎" },
+        { page: "guides",       label: "Гиды",                   icon: "▷" },
+        { page: "tariffs",      label: "Тарифы",                 icon: "◇" },
       ]
     },
 
@@ -41,19 +56,25 @@
     {
       id: "box", label: "Касса", icon: "▣",
       items: [
-        { page: "sales",   label: "Продажи и заказы", icon: "◧" },
-        { page: "ledger",  label: "Бухгалтерия",      icon: "▤", href: "ledger.html" },
-        { page: "refunds", label: "Возвраты",         icon: "↺" },
+        { page: "ledger",  label: "Бухгалтерия", icon: "▤", href: "ledger.html" },
+        { page: "refunds", label: "Возвраты",    icon: "↺" },
       ]
     },
 
     {
       id: "marketing", label: "Маркетинг", icon: "◆",
       items: [
-        { page: "analytics", label: "Аналитика",         icon: "∿", href: "analytics.html" },
-        { page: "promo",     label: "Промокоды",         icon: "✂" },
-        { page: "mailing",   label: "Рассылки",          icon: "✉" },
-        { page: "banners",   label: "Афиши и баннеры",   icon: "▧" },
+        { page: "ticket-ads",  label: "Реклама на билетах",   icon: "▭" },
+        { page: "mailing",     label: "Email рассылки",       icon: "✉" },
+        { page: "subscribers", label: "Подписчики",           icon: "⊚" },
+        { page: "campaigns",   label: "Акции",                icon: "✧" },
+        { page: "social",      label: "Соц. сети",            icon: "⊛" },
+        { page: "promo",       label: "Промокоды",            icon: "✂" },
+        { page: "closed-sale", label: "Коды закрытых продаж", icon: "⊠" },
+        { page: "discounts",   label: "Условные скидки",      icon: "%" },
+        { page: "referrals",   label: "Рефералы",             icon: "⊕" },
+        { page: "integration", label: "Интеграция",           icon: "⊡" },
+        { page: "audiences",   label: "Аудитории",            icon: "▩" },
       ]
     },
   ];
@@ -144,6 +165,25 @@
       group.append(head, body);
       nav.appendChild(group);
     });
+
+    revealActive(nav);
+  }
+
+  /** Длинные группы прокручиваются — подводим активный пункт в видимую часть.
+      Скроллим только контейнер меню, страницу не трогаем. */
+  function revealActive(nav) {
+    const a = nav.querySelector("a.active");
+    if (!a || nav.scrollHeight <= nav.clientHeight) return;
+
+    /* offsetTop тут не годится: у .ng-inner своя система координат (position:relative).
+       Считаем от рамок — надёжно при любой вложенности. */
+    const nb = nav.getBoundingClientRect();
+    const ab = a.getBoundingClientRect();
+    const top = ab.top - nb.top + nav.scrollTop;
+    const bottom = top + ab.height;
+
+    if (top < nav.scrollTop) nav.scrollTop = Math.max(0, top - 12);
+    else if (bottom > nav.scrollTop + nav.clientHeight) nav.scrollTop = bottom - nav.clientHeight + 12;
   }
 
   function buildLink(item, current) {

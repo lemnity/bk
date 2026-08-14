@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Площадки</title>
+<meta name="description" content="Демонстрационный кабинет администратора: справочник площадок." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=5" />
+</head>
+<body class="admin" data-page="venues">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Администрирование</p>
+      <h1 id="pageTitle">Площадки</h1>
+    </div>
+  </header>
+
+  <div class="tab" data-panel="venues">
+
+    <!-- ░ ФИЛЬТРЫ ░ -->
+    <form class="filterbar" id="venueFilters" aria-label="Фильтры площадок">
+      <label>ID <input name="id" inputmode="numeric" autocomplete="off" /></label>
+      <label>Название <input name="name" autocomplete="off" /></label>
+      <label>Служебное название <input name="altName" autocomplete="off" /></label>
+      <label>Адрес <input name="address" autocomplete="off" /></label>
+      <label>Базовая площадка
+        <select name="base">
+          <option value="">—</option>
+          <option value="yes">Да</option>
+          <option value="no">Нет</option>
+        </select>
+      </label>
+      <label>Только удалённые
+        <select name="deleted">
+          <option value="no" selected>Нет</option>
+          <option value="yes">Да</option>
+        </select>
+      </label>
+      <label>ID распоясовки <input name="layoutId" inputmode="numeric" autocomplete="off" /></label>
+      <div class="fb-actions">
+        <button class="btn btn-gold" type="submit">Применить</button>
+        <button class="btn btn-plain" type="button" id="venueResetBtn">Сбросить</button>
+      </div>
+    </form>
+
+    <!-- ░ СПИСОК ░ -->
+    <section class="panel pad">
+      <div class="panel-head">
+        <h2>Справочник площадок</h2>
+        <span class="ph-total" id="venueTotal">—</span>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-gold" id="newVenueBtn">+ Добавить</button>
+        <select id="copySource" aria-label="Площадка для копирования"></select>
+        <button class="btn btn-plain" id="copyVenueBtn">Скопировать</button>
+      </div>
+
+      <form class="editform" id="venueForm" hidden>
+        <p class="ef-title" id="venueFormTitle">Новая площадка</p>
+        <label>Название <input name="name" required placeholder="ТБДТ · Большая сцена" /></label>
+        <label>Служебное название <input name="altName" placeholder="внутреннее" /></label>
+        <label>Адрес <input name="address" placeholder="Тюмень, ул. Республики, 129" /></label>
+        <label>Строение <input name="building" placeholder="Историческое здание" /></label>
+        <label>Адрес строения <input name="buildingAddress" placeholder="Россия, Тюмень, …" /></label>
+        <label>Город <input name="city" list="cityList" placeholder="Тюмень" /></label>
+        <datalist id="cityList"></datalist>
+        <label>Кол-во секторов <input name="sectors" type="number" min="0" max="99" value="1" /></label>
+        <label>Номер акцептанта (ШК) <input name="acceptor" inputmode="numeric" placeholder="7701234567" /></label>
+        <label class="ef-check"><input name="base" type="checkbox" /> <span>Базовая площадка</span></label>
+        <div class="ef-actions">
+          <button class="btn btn-gold" type="submit" id="venueSubmit">Добавить площадку</button>
+          <button class="btn btn-plain" type="button" id="venueCancel">Отмена</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table class="dtable venues-table">
+          <thead>
+            <tr>
+              <th>id</th>
+              <th>Название</th>
+              <th>Служебное название</th>
+              <th>Адрес</th>
+              <th>Строение</th>
+              <th>Адрес строения</th>
+              <th>Город</th>
+              <th class="num">Кол-во секторов</th>
+              <th>Распоясовки</th>
+              <th>Базовая</th>
+              <th>Номер акцептанта (ШК)</th>
+              <th class="acts"><span class="vh">Действия</span></th>
+            </tr>
+          </thead>
+          <tbody id="venueBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-nav.js?v=1"></script>
+<script src="admin-store.js?v=2"></script>
+<script src="admin-venues.js?v=1"></script>
+</body>
+</html>
