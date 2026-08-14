@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Отчёт</title>
+<meta name="description" content="Кабинет администратора: формирование отчёта." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=8" />
+</head>
+<body class="admin" data-page="reports">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Администрирование</p>
+      <h1 id="repTitle">Отчёт</h1>
+    </div>
+    <button class="rv-fav" id="repFavBtn" type="button" aria-pressed="false" title="В избранное">
+      <span aria-hidden="true">★</span><span id="repFavLabel">В избранное</span>
+    </button>
+  </header>
+
+  <!-- хлебные крошки -->
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="admin.html">Консоль</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <a href="reports.html">Отчёты</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <span class="crumbs-cur" id="repCrumbTail">Отчёт</span>
+  </nav>
+
+  <div id="repBody">
+    <section class="panel pad">
+      <!-- параметры -->
+      <div class="rv-form" id="repForm"></div>
+
+      <div class="rv-actions">
+        <button class="btn btn-gold" id="repRun" type="button">Показать отчёт</button>
+      </div>
+
+      <p class="rv-notice" id="repNotice" hidden>
+        Параметры и столбцы этого отчёта ещё не заведены — показана универсальная форма.
+        Наполняем каталог по одному отчёту.
+      </p>
+
+      <!-- выбор столбцов -->
+      <div class="rv-cols" id="repCols">
+        <button class="btn btn-plain" id="repColsBtn" type="button"
+                aria-expanded="false" aria-haspopup="true">Выбрать столбцы ▾</button>
+        <div class="rv-cols-menu" id="repColsMenu" hidden></div>
+      </div>
+    </section>
+
+    <!-- результат -->
+    <section class="panel pad" id="repResultWrap" hidden>
+      <div class="panel-head">
+        <h2>Результат</h2>
+      </div>
+      <div id="repResult"></div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-nav.js?v=1"></script>
+<script src="admin-store.js?v=3"></script>
+<script src="admin-reports.js?v=3"></script>
+<script src="admin-report-specs.js?v=3"></script>
+<script src="admin-report-view.js?v=3"></script>
+</body>
+</html>

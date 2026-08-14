@@ -27,7 +27,7 @@
         { page: "goods",        label: "Товары",                 icon: "▨" },
         { page: "events",       label: "События",                icon: "◈", href: "events.html" },
         { page: "orders",       label: "Заказы",                 icon: "≣" },
-        { page: "reports",      label: "Отчёты",                 icon: "▧" },
+        { page: "reports",      label: "Отчёты",                 icon: "▧", href: "reports.html" },
         { page: "bank-orders",  label: "Заказы на р/с",          icon: "№" },
         { page: "distributors", label: "Распространители",       icon: "⇄" },
         { page: "quotas",       label: "Квоты",                  icon: "◔" },

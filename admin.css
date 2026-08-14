@@ -520,6 +520,128 @@ a{color:inherit;text-decoration:none}
 .rowact:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
+/* ============================================================ REPORTS */
+.rep-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:18px}
+.rep-filter{display:inline-flex;flex-wrap:wrap;gap:2px;background:var(--surface-2);border-radius:999px;padding:3px}
+.rep-filter button{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-ui);font-size:.8rem;font-weight:500;
+  border:none;background:none;color:var(--ink-2);padding:8px 16px;border-radius:999px;cursor:pointer;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.rep-filter button:hover{color:var(--ink)}
+.rep-filter button.active{background:var(--surface);color:var(--accent);box-shadow:var(--sh-sm)}
+/* счётчик в чипе: на активном — заливка акцентом, иначе он теряется */
+.rep-tab-n{font-size:.7rem;font-weight:500;color:var(--ink-mute);background:var(--surface);border-radius:999px;
+  padding:1px 7px;font-variant-numeric:tabular-nums}
+.rep-filter button.active .rep-tab-n{background:var(--accent-tint);color:var(--accent)}
+
+.rep-search{flex:1 1 260px;min-width:0;display:flex}
+.rep-search input{width:100%;font-family:var(--font-ui);font-size:.9rem;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);padding:10px 14px;
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.rep-search input::placeholder{color:#8A99AE}
+.rep-search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+
+.rep-group{margin-bottom:26px}
+.rep-group:last-child{margin-bottom:0}
+.rep-group-title{display:flex;align-items:center;gap:10px;font-family:var(--font-disp);font-size:1rem;font-weight:500;
+  color:var(--ink);letter-spacing:-.015em;margin-bottom:10px}
+.rep-group-count{font-family:var(--font-ui);font-size:.72rem;font-weight:500;color:var(--ink-mute);
+  background:var(--surface-2);border-radius:999px;padding:2px 9px;font-variant-numeric:tabular-nums}
+
+/* номер отчёта — идентификатор, а не счётчик: не переносим и держим моноширинные цифры */
+.reports-table{min-width:720px}
+.reports-table .rep-no{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:500;color:var(--ink);width:1%}
+.reports-table .rep-name{color:var(--ink-2);min-width:320px}
+.reports-table .rep-info{width:1%;white-space:nowrap}
+.rep-pk{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:.04em;color:var(--bad);
+  background:var(--bad-bg);border-radius:999px;padding:2px 9px}
+
+/* звезда: пустая — контур, отмеченная — заливка акцентом */
+.rep-star{font-size:1rem;line-height:1;color:var(--line-2)}
+.rep-star:hover{background:var(--accent-tint);color:var(--accent)}
+.rep-star.is-fav{color:var(--accent)}
+.rep-star.is-fav:hover{background:var(--accent-tint)}
+
+.rep-empty{color:var(--ink-mute);font-size:.88rem;padding:10px 2px;max-width:60ch;line-height:1.6}
+
+@media(max-width:820px){
+  .rep-toolbar{flex-direction:column;align-items:stretch}
+  .rep-filter{overflow-x:auto;flex-wrap:nowrap}
+}
+
+/* ============================================================ REPORT VIEW */
+/* хлебные крошки — своя полоса под шапкой */
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:-8px 0 20px;padding:11px 16px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);font-size:.84rem;color:var(--ink-mute)}
+.crumbs a{color:var(--accent);font-weight:500}
+.crumbs a:hover{text-decoration:underline;text-underline-offset:3px}
+.crumbs-sep{color:var(--line-2)}
+.crumbs-cur{color:var(--ink-2)}
+
+/* звезда «в избранное» в шапке страницы отчёта */
+.rv-fav{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-ui);font-size:.85rem;font-weight:500;
+  color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:9px 16px;cursor:pointer;transition:border-color var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.rv-fav:hover{border-color:var(--accent);color:var(--accent)}
+.rv-fav.is-fav{color:var(--accent);border-color:var(--accent);background:var(--accent-tint)}
+
+/* форма параметров: левая колонка · «или» · правая колонка */
+.rv-form{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px 18px;align-items:start;margin-bottom:18px}
+.rv-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.rv-col-mid{justify-content:flex-start}
+.rv-row{display:flex;min-width:0}
+.rv-or{display:inline-flex;align-items:center;height:40px;color:var(--ink-mute);font-size:.85rem}
+
+.rv-select,.rv-group select,.rv-group input{font-family:var(--font-ui);font-size:.9rem;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:9px 12px;
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.rv-select{width:100%;cursor:pointer}
+.rv-select:focus,.rv-group select:focus,.rv-group input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+
+/* группа с приставкой: приставка и поле — одна деталь, углы стыкуются */
+.rv-group{display:flex;width:100%;min-width:0}
+.rv-addon{display:inline-flex;align-items:center;white-space:nowrap;font-size:.85rem;color:var(--ink-2);
+  background:var(--surface-2);border:1px solid var(--line-2);border-right:none;
+  border-radius:var(--r-sm) 0 0 var(--r-sm);padding:9px 14px}
+.rv-group select,.rv-group input{flex:1 1 auto;min-width:0;border-radius:0 var(--r-sm) var(--r-sm) 0}
+/* диапазон: приставка + «дата с» + тире + «дата по» — одна деталь,
+   поэтому внутренние стыки без скруглений и без двойных границ */
+.rv-group-range .rv-date{border-radius:0}
+.rv-group-range .rv-date:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0}
+.rv-group-range .rv-dash{display:inline-flex;align-items:center;padding:0 8px;color:var(--ink-mute);
+  background:var(--surface);border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2)}
+.rv-date{font-variant-numeric:tabular-nums}
+/* поле даты в Safari/iOS не сжимается ниже своего контента без этого */
+.rv-group-range .rv-date{width:100%;min-width:0}
+
+.rv-check{display:inline-flex;align-items:center;gap:9px;font-size:.88rem;color:var(--ink-2);cursor:pointer;min-height:40px}
+.rv-check input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto}
+
+.rv-actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.rv-notice{font-size:.86rem;color:var(--warn);background:rgba(138,91,16,.08);border-radius:var(--r-sm);
+  padding:11px 14px;margin-bottom:16px;max-width:74ch;line-height:1.55}
+
+/* выбор столбцов — выпадающее меню флажков */
+.rv-cols{position:relative;display:inline-block}
+.rv-cols-menu{position:absolute;top:calc(100% + 6px);left:0;z-index:40;min-width:250px;max-height:340px;overflow-y:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-lg);padding:8px}
+.rv-colopt{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--r-sm);cursor:pointer;
+  font-size:.86rem;color:var(--ink-2);transition:background var(--t-fast) var(--ease)}
+.rv-colopt:hover{background:var(--surface-2);color:var(--ink)}
+.rv-colopt input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto}
+
+/* итоговая строка таблицы результата */
+.rv-table tfoot td{font-weight:500;color:var(--ink);background:var(--surface-2);
+  border-top:1px solid var(--line-2);border-bottom:none}
+/* числовые ячейки не переносим: «10 %» и суммы должны читаться одной строкой */
+.rv-table th.num,.rv-table td.num{white-space:nowrap}
+
+@media(max-width:900px){
+  /* «или» между колонками на узком экране только мешает */
+  .rv-form{grid-template-columns:1fr}
+  .rv-col-mid{display:none}
+  .top .rv-fav{align-self:flex-start}
+}
+
 /* ============================================================ SECTION STUB */
 .panel.stub{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:72px 24px 68px;position:relative}
 .panel.stub::before{content:none}

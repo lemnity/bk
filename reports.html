@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ТБДТ · Кабинет администратора · Бухгалтерия</title>
-<meta name="description" content="Демонстрационный кабинет администратора: книга операций." />
+<title>ТБДТ · Кабинет администратора · Отчёты</title>
+<meta name="description" content="Кабинет администратора: каталог отчётов театра — общие, кассовые, музейные, новые и приказы." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="admin.css?v=8" />
 </head>
-<body class="admin" data-page="ledger">
+<body class="admin" data-page="reports">
 
 <!-- ░░░ SIDEBAR ░░░ -->
 <aside class="side">
@@ -36,39 +36,48 @@
 <main class="main">
   <header class="top">
     <div class="top-title">
-      <p class="crumb">ТБДТ · Прощальные гастроли</p>
-      <h1 id="pageTitle">Бухгалтерия</h1>
+      <p class="crumb">ТБДТ · Администрирование</p>
+      <h1 id="pageTitle">Отчёты</h1>
     </div>
   </header>
 
-  <!-- ░ LEDGER ░ -->
-  <div class="tab" data-panel="ledger">
-    <section class="ledger-sum" id="ledgerSum"></section>
+  <div class="tab" data-panel="reports">
+
+    <!-- ░ ИЗБРАННОЕ ░ -->
     <section class="panel pad">
       <div class="panel-head">
-        <h2>Книга операций</h2>
-        <div class="ledger-actions">
-          <button class="btn btn-plain" id="buildReport">⤓ Сформировать отчёт</button>
-          <button class="btn btn-gold" id="addExpense">+ Добавить расход</button>
-        </div>
+        <h2>Избранные отчёты</h2>
+        <span class="ph-total" id="repFavCount"></span>
       </div>
-      <div class="table-wrap">
-        <table class="dtable ledger-table">
-          <thead>
-            <tr><th>Дата</th><th>Операция</th><th>Категория</th><th class="num">Сумма, ₽</th><th>Статус</th></tr>
-          </thead>
-          <tbody id="ledgerBody"></tbody>
-        </table>
-      </div>
+      <div id="repFav"></div>
     </section>
-  </div>
 
+    <!-- ░ КАТАЛОГ ░ -->
+    <section class="panel pad">
+      <div class="panel-head">
+        <h2>Все отчёты</h2>
+        <span class="ph-total" id="repTotal"></span>
+      </div>
+
+      <div class="rep-toolbar">
+        <div class="rep-filter" id="repFilter" role="tablist" aria-label="Тип отчёта"></div>
+        <label class="rep-search">
+          <span class="vh">Поиск по названию или номеру отчёта</span>
+          <input id="repSearch" type="search" autocomplete="off"
+                 placeholder="Поиск по названию или номеру" />
+        </label>
+      </div>
+
+      <div id="repList"></div>
+    </section>
+
+  </div>
 </main>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="admin-nav.js?v=1"></script>
-<script src="admin-store.js?v=2"></script>
-<script src="admin.js?v=1"></script>
+<script src="admin-store.js?v=3"></script>
+<script src="admin-reports.js?v=3"></script>
 </body>
 </html>
