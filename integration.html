@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Интеграция</title>
+<meta name="description" content="Кабинет администратора: счётчики аналитики, пиксели и дополнительный код виджета." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=12" />
+</head>
+<body class="admin" data-page="integration">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Маркетинг</p>
+      <h1>Интеграция</h1>
+    </div>
+    <span class="int-dirty" id="intDirty" hidden>Есть несохранённые изменения</span>
+  </header>
+
+  <!-- хлебные крошки -->
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="admin.html">Консоль</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <span class="crumbs-cur">Интеграция</span>
+  </nav>
+
+  <!-- ░ СЧЁТЧИКИ ░ -->
+  <section class="panel pad">
+    <div class="panel-head">
+      <h2>Счётчики и пиксели</h2>
+    </div>
+    <div class="int-fields" id="intFields"></div>
+  </section>
+
+  <!-- ░ КОД ВИДЖЕТА ░ -->
+  <section class="panel pad">
+    <div class="panel-head">
+      <h2>Дополнительный код для виджета</h2>
+    </div>
+
+    <div class="int-code-row">
+      <div class="int-code">
+        <pre class="int-gutter" id="intGutter" aria-hidden="true">1
+</pre>
+        <textarea id="intCode" spellcheck="false" autocomplete="off"
+                  aria-label="Дополнительный код для виджета"></textarea>
+      </div>
+
+      <aside class="int-note">
+        <b>Внимание!</b> После заполнения этого поля обязательно проверьте
+        работоспособность виджета на вашем сайте: код выполняется внутри
+        него и ошибка здесь останавливает продажу билетов.
+      </aside>
+    </div>
+
+    <div class="int-actions">
+      <button class="btn btn-gold"  id="intSave"      type="button">Сохранить</button>
+      <button class="btn btn-plain" id="intSaveClose" type="button">Сохранить и закрыть</button>
+    </div>
+  </section>
+
+  <!-- ░ СПРАВКА ░ -->
+  <section class="panel pad">
+    <div class="panel-head">
+      <h2>Основные события, отправляемые в метрику</h2>
+    </div>
+    <p class="int-lead">
+      Зачёркнутое — имя, которое виджет отправлял раньше. Оно ещё встречается
+      в старых целях Метрики, но на новых площадках не приходит: настраивайте
+      цели по нижнему имени.
+    </p>
+    <div id="intEvents"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-nav.js?v=4"></script>
+<script src="admin-store.js?v=5"></script>
+<script src="admin-integration.js?v=1"></script>
+</body>
+</html>

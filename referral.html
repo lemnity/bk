@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Реферальная метка</title>
+<meta name="description" content="Кабинет администратора: реферальная метка партнёра." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=12" />
+</head>
+<body class="admin" data-page="referrals">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Маркетинг</p>
+      <h1 id="refTitle">Метка</h1>
+    </div>
+    <span class="int-dirty" id="refDirty" hidden>Есть несохранённые изменения</span>
+  </header>
+
+  <!-- хлебные крошки -->
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="admin.html">Консоль</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <a href="referrals.html">Рефералы</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <span class="crumbs-cur" id="refCrumbTail">Метка</span>
+  </nav>
+
+  <div id="refBody">
+    <section class="panel pad">
+      <div class="ref-form">
+        <label class="ref-name" for="refName">Название</label>
+        <input id="refName" type="text" autocomplete="off" placeholder="например, Школа №11" />
+        <p class="ref-err" id="refErr" role="alert" hidden></p>
+
+        <!-- краткое название и ссылка выводятся из названия -->
+        <dl class="ref-derived">
+          <dt>Краткое название</dt>
+          <dd id="refSlug">—</dd>
+          <dt>Ссылка для размещения</dt>
+          <dd id="refLink">—</dd>
+        </dl>
+      </div>
+
+      <div class="int-actions">
+        <button class="btn btn-gold"  id="refSave"      type="button">Сохранить</button>
+        <button class="btn btn-plain" id="refSaveClose" type="button">Сохранить и закрыть</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-nav.js?v=4"></script>
+<script src="admin-store.js?v=5"></script>
+<script src="admin-referrals.js?v=1"></script>
+<script src="admin-referral-view.js?v=1"></script>
+</body>
+</html>

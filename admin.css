@@ -687,6 +687,142 @@ a{color:inherit;text-decoration:none}
   .rdoc-appr{text-align:left;padding:14px 0 0;white-space:normal}
 }
 
+/* ============================================================ АУДИТОРИИ */
+.aud-lead{color:var(--ink-2);font-size:.9rem;line-height:1.6;max-width:72ch;margin:0 0 18px}
+.aud-no{width:1%;white-space:nowrap;color:var(--ink-mute);font-variant-numeric:tabular-nums}
+
+/* пороги отбора: подпись над полем, кнопка выгрузки прижата вправо */
+.aud-form{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+.aud-fields{display:flex;gap:18px;flex-wrap:wrap;flex:1 1 auto;min-width:0}
+.aud-field{display:flex;flex-direction:column;gap:7px;min-width:0;flex:0 1 280px}
+.aud-field>span{font-size:.85rem;font-weight:500;color:var(--ink-2)}
+.aud-field input{font-family:var(--font-ui);font-size:.9rem;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);height:40px;padding:0 12px;width:100%;
+  font-variant-numeric:tabular-nums;transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.aud-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+
+/* цвет взят из токена --bad: белым по нему контраст проходит AA,
+   а красная кнопка выгрузки с макета остаётся узнаваемой */
+.aud-csv{background:var(--bad);border-color:var(--bad);color:#fff;flex:0 0 auto}
+.aud-csv:hover:not(:disabled){background:#8F1E17;border-color:#8F1E17}
+.aud-csv:disabled{background:var(--surface-2);border-color:var(--line);color:var(--ink-mute);cursor:not-allowed}
+
+.aud-range{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.aud-range .rv-group{width:auto;flex:0 1 460px}
+.aud-hint{margin:0;font-size:.82rem;color:var(--ink-mute)}
+
+.aud-result th.num,.aud-result td.num{white-space:nowrap}
+
+@media(max-width:760px){
+  .aud-field{flex:1 1 100%}
+  .aud-csv{width:100%}
+  .aud-range .rv-group{flex:1 1 100%}
+}
+
+/* ============================================================ ИНТЕГРАЦИЯ */
+.int-lead{color:var(--ink-2);font-size:.9rem;line-height:1.6;max-width:76ch;margin:0 0 18px}
+.int-dirty{font-size:.82rem;font-weight:500;color:var(--warn);background:rgba(138,91,16,.08);
+  border-radius:var(--r-sm);padding:8px 14px;white-space:nowrap}
+
+/* счётчики: две колонки на широком экране, подпись над полем */
+.int-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px 24px}
+.int-field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.int-field label{font-size:.85rem;font-weight:600;color:var(--ink)}
+.int-field input{font-family:var(--font-ui);font-size:.9rem;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);height:42px;padding:0 13px;width:100%;
+  font-variant-numeric:tabular-nums;
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.int-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.int-field.is-bad input{border-color:var(--bad)}
+.int-field.is-bad input:focus{box-shadow:0 0 0 3px var(--bad-bg)}
+.int-hint{margin:0;font-size:.8rem;color:var(--ink-mute);line-height:1.5}
+.int-err{margin:0;font-size:.8rem;color:var(--bad);line-height:1.5}
+
+/* редактор: поле кода слева, предупреждение справа */
+.int-code-row{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
+.int-code{display:flex;flex:1 1 520px;min-width:0;border:1px solid var(--line-2);
+  border-radius:var(--r-sm);overflow:hidden;background:#1E2229}
+.int-code:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+/* номера строк и текст должны совпадать по метрике до пикселя,
+   иначе строка 40 в колонке уедет от строки 40 в коде */
+.int-gutter,.int-code textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.82rem;line-height:1.6;margin:0;padding:14px 0;border:0}
+.int-gutter{flex:0 0 auto;min-width:46px;padding-right:10px;text-align:right;color:#6C7683;
+  background:#272B33;overflow:hidden;user-select:none;white-space:pre}
+.int-code textarea{flex:1 1 auto;min-width:0;height:340px;resize:vertical;padding-left:14px;
+  padding-right:14px;color:#E6E9EE;background:transparent;outline:none;white-space:pre;overflow:auto;
+  caret-color:#E6E9EE;tab-size:2}
+.int-note{flex:0 1 330px;font-size:.86rem;line-height:1.6;color:var(--ink-2);
+  background:var(--accent-tint);border-radius:var(--r-sm);padding:14px 16px}
+.int-note b{color:var(--accent)}
+
+.int-actions{display:flex;gap:12px;flex-wrap:wrap}
+
+/* справка по событиям */
+.int-ev td{vertical-align:top}
+.int-ev-old{display:block;color:var(--ink-mute)}
+.int-ev-now{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.84rem;color:var(--ink)}
+
+@media(max-width:760px){
+  .int-code textarea{height:260px}
+  .int-note{flex:1 1 100%}
+  .int-actions .btn{flex:1 1 100%}
+}
+
+/* ============================================================ РЕФЕРАЛЫ */
+/* тулбар: «Добавить» слева, адрес виджета по центру, «Статистика» справа */
+.ref-toolbar{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.ref-base{flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:7px}
+.ref-base label{font-size:.85rem;font-weight:500;color:var(--ink-2);line-height:1.45}
+.ref-base-row{display:flex;gap:10px;min-width:0}
+.ref-base-row input{flex:1 1 auto;min-width:0;font-family:var(--font-ui);font-size:.9rem;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-sm);height:40px;padding:0 12px;
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.ref-base-row input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.ref-base-row .btn{flex:0 0 auto}
+.ref-stats{flex:0 0 auto;background:var(--surface);color:var(--accent);border-color:var(--accent)}
+.ref-stats:hover{background:var(--accent-tint)}
+.ref-stats.is-on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.ref-id{width:1%;white-space:nowrap;color:var(--ink-mute);font-variant-numeric:tabular-nums}
+.ref-slug{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.82rem;white-space:nowrap}
+/* ссылка длинная: даём ей рваться, иначе таблица уезжает за экран */
+.ref-link{min-width:280px}
+.ref-link a{color:var(--accent);word-break:break-all}
+.ref-link a:hover{text-decoration:underline}
+.ref-nolink{color:var(--ink-mute);font-style:italic}
+
+/* подтверждение удаления прямо в строке — модалок в кабинете нет */
+.ref-confirm{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  font-size:.82rem;color:var(--ink-2)}
+.btn-mini{font-family:var(--font-ui);font-size:.78rem;font-weight:500;cursor:pointer;
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);
+  border-radius:var(--r-sm);padding:5px 11px}
+.btn-mini:hover{background:var(--surface-2);color:var(--ink)}
+.btn-mini.danger{border-color:var(--bad);color:#fff;background:var(--bad)}
+.btn-mini.danger:hover{background:#8F1E17;border-color:#8F1E17}
+
+/* карточка метки */
+.ref-form{max-width:640px;margin-bottom:20px}
+.ref-name{display:block;font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:7px}
+#refName{width:100%;font-family:var(--font-ui);font-size:.9rem;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);height:42px;padding:0 13px;
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+#refName:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+#refName.is-bad{border-color:var(--bad)}
+#refName.is-bad:focus{box-shadow:0 0 0 3px var(--bad-bg)}
+.ref-err{margin:8px 0 0;font-size:.82rem;color:var(--bad);line-height:1.5}
+.ref-derived{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 16px;margin:18px 0 0}
+.ref-derived dt{font-size:.82rem;color:var(--ink-mute)}
+.ref-derived dd{margin:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.82rem;color:var(--ink);word-break:break-all}
+
+@media(max-width:760px){
+  .ref-base{flex:1 1 100%}
+  .ref-toolbar>.btn{flex:1 1 100%}
+}
+
 /* ============================================================ SECTION STUB */
 .panel.stub{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:72px 24px 68px;position:relative}
 .panel.stub::before{content:none}

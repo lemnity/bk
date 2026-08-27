@@ -72,9 +72,9 @@
         { page: "promo",       label: "Промокоды",            icon: "✂" },
         { page: "closed-sale", label: "Коды закрытых продаж", icon: "⊠" },
         { page: "discounts",   label: "Условные скидки",      icon: "%" },
-        { page: "referrals",   label: "Рефералы",             icon: "⊕" },
-        { page: "integration", label: "Интеграция",           icon: "⊡" },
-        { page: "audiences",   label: "Аудитории",            icon: "▩" },
+        { page: "referrals",   label: "Рефералы",             icon: "⊕", href: "referrals.html" },
+        { page: "integration", label: "Интеграция",           icon: "⊡", href: "integration.html" },
+        { page: "audiences",   label: "Аудитории",            icon: "▩", href: "audiences.html" },
       ]
     },
   ];

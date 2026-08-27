@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ТБДТ · Кабинет администратора · Рефералы</title>
+<meta name="description" content="Кабинет администратора: реферальные метки партнёров и ссылки для размещения." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=12" />
+</head>
+<body class="admin" data-page="referrals">
+
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Театр Либерта" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">ТБДТ · Маркетинг</p>
+      <h1>Рефералы</h1>
+    </div>
+  </header>
+
+  <!-- хлебные крошки -->
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="admin.html">Консоль</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <span class="crumbs-cur">Рефералы</span>
+  </nav>
+
+  <section class="panel pad">
+    <div class="ref-toolbar">
+      <button class="btn btn-gold" id="refAdd" type="button">Добавить</button>
+
+      <div class="ref-base">
+        <label for="refBase">
+          Чтобы получить ссылки, укажите адрес страницы, на которой расположен виджет
+        </label>
+        <div class="ref-base-row">
+          <input id="refBase" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+                 placeholder="https://tbdt.ru/afisha" />
+          <button class="btn btn-plain" id="refApply" type="button">Применить</button>
+        </div>
+      </div>
+
+      <button class="btn ref-stats" id="refStatsBtn" type="button" aria-pressed="false">Статистика</button>
+    </div>
+
+    <div id="refList"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-nav.js?v=4"></script>
+<script src="admin-store.js?v=5"></script>
+<script src="admin-referrals.js?v=1"></script>
+</body>
+</html>
