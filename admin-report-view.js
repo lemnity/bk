@@ -124,10 +124,15 @@
   function buildColumnPicker() {
     var host = $("#repCols");
     if (!canPick) { host.hidden = true; return; }
-    $("#repColsMenu").innerHTML = columns.map(function (c) {
-      return '<label class="rv-colopt"><input type="checkbox" data-col="' + esc(c.id) + '"' +
-        (shown[c.id] ? " checked" : "") + " /><span>" + esc(c.label) + "</span></label>";
-    }).join("");
+    /* fixed-столбец (Продавец, Мероприятие) в меню не показываем:
+       без него у строк пропадает подпись. Парные столбцы подписываем
+       вместе с надстройкой — иначе в меню три одинаковых «Число». */
+    $("#repColsMenu").innerHTML = columns.filter(function (c) { return !c.fixed; })
+      .map(function (c) {
+        var label = (c.group ? c.group + " · " : "") + c.label;
+        return '<label class="rv-colopt"><input type="checkbox" data-col="' + esc(c.id) + '"' +
+          (shown[c.id] ? " checked" : "") + " /><span>" + esc(label) + "</span></label>";
+      }).join("");
   }
 
   var colsBtn = $("#repColsBtn");
@@ -157,7 +162,7 @@
     var cb = e.target.closest("input[data-col]");
     if (!cb) return;
     shown[cb.dataset.col] = cb.checked;
-    if (built) renderTable();
+    if (built) render();
   });
 
   /* ---- результат ---- */
@@ -207,15 +212,93 @@
       "</tr></tfoot></table></div>";
   }
 
+  /* ---- бланк документа ----
+     У отчёта со спекой doc результат — не таблица, а бланк: шапка
+     с «Утверждаю», итоги, свод, подписи. Ту же модель забирают
+     кнопки Word и Excel, поэтому собирается она в одном месте. */
+
+  function ruDate(v) {
+    if (!v) return "";
+    var p = v.split("-");
+    return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : v;
+  }
+
+  /* строка события под названием отчёта — то, что выбрано в форме */
+  function eventLine() {
+    var ev = $("#f_event");
+    if (ev && ev.selectedIndex > 0) {
+      /* в списке событие лежит как «Гамлет · 2026-06-12 · Большой зал»,
+         в бланке дата идёт первой */
+      var p = ev.value.split(" · ");
+      if (p.length === 3 && /^\d{4}-\d{2}-\d{2}$/.test(p[1])) {
+        return ruDate(p[1]) + " · " + p[0] + " · " + p[2];
+      }
+      return ev.value;
+    }
+    var from = $("#f_range_from"), to = $("#f_range_to");
+    if (from && to && (from.value || to.value)) {
+      return "Период с " + (ruDate(from.value) || "…") + " по " + (ruDate(to.value) || "…");
+    }
+    var show = $("#f_show");
+    if (show && show.selectedIndex > 0) return show.value;
+    return "";
+  }
+
+  function docModel() {
+    var d = spec.doc;
+    var rows = spec.rows();
+    var inv  = d.invites ? d.invites() : null;
+    /* пригласительные всегда входят в «Всего:» и в свод; флажок решает
+       только, показывать ли их отдельной строкой */
+    var all  = inv ? rows.concat([inv]) : rows;
+    var sep  = !!($("#f_invites") && $("#f_invites").checked);
+    return {
+      org: window.AdminReportDoc.org,
+      title: title,
+      doc: d,
+      cols: columns.filter(function (c) { return shown[c.id]; }),
+      eventLine: eventLine(),
+      rows: rows,
+      invites: sep ? inv : null,
+      totals:  d.totals  ? d.totals(all)  : null,
+      summary: d.summary ? d.summary(all) : null,
+    };
+  }
+
+  function render() {
+    var actions = $("#repDocActions");
+    if (!columns.filter(function (c) { return shown[c.id]; }).length) {
+      $("#repResult").innerHTML = '<p class="rep-empty">Не выбрано ни одного столбца.</p>';
+      actions.hidden = true;
+      return;
+    }
+    if (spec.doc) {
+      window.AdminReportDoc.render($("#repResult"), docModel());
+      actions.hidden = false;
+    } else {
+      renderTable();
+      actions.hidden = true;
+    }
+  }
+
   $("#repRun").addEventListener("click", function () {
     if (!spec) {
       toast("Параметры этого отчёта ещё не заведены");
       return;
     }
     built = true;
-    renderTable();
+    render();
     $("#repResultWrap").hidden = false;
     toast("Отчёт сформирован");
+  });
+
+  [["#repWord", "word", "Документ Word сохранён"],
+   ["#repExcel", "excel", "Книга Excel сохранена"]].forEach(function (b) {
+    $(b[0]).addEventListener("click", function () {
+      if (!built || !spec || !spec.doc) return;
+      window.AdminReportDoc.download(docModel(), b[1]);
+      toast(b[2]);
+    });
   });
 
   function toast(msg) {

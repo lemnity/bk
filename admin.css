@@ -635,11 +635,56 @@ a{color:inherit;text-decoration:none}
 /* числовые ячейки не переносим: «10 %» и суммы должны читаться одной строкой */
 .rv-table th.num,.rv-table td.num{white-space:nowrap}
 
+/* ── бланк документа (результат отчёта) ─────────────────────
+   Здесь нарочно другой регистр, чем у остального кабинета: это
+   печатная форма с подписями, а не карточка интерфейса. Отсюда
+   рамки у каждой ячейки и колонтитул с кодом отчёта. Те же классы
+   продублированы в admin-report-doc.js для Word и Excel — внешний
+   css в выгруженный файл не попадает. */
+.rdoc{color:var(--ink);font-size:.88rem;line-height:1.5}
+.rdoc-scroll{overflow-x:auto;margin-bottom:26px}
+
+/* шапка — служебная таблица без рамок (ради Word и Excel, см. модуль) */
+.rdoc-top{width:100%;border-collapse:collapse;margin-bottom:22px}
+.rdoc-top td{border:none;padding:0;vertical-align:top}
+.rdoc-org{min-width:0}
+.rdoc-org-name{margin:0 0 8px;font-size:1.06rem;font-weight:600;color:var(--ink)}
+.rdoc-cap{margin:0 0 3px;font-weight:500;font-style:italic;color:var(--ink-2)}
+.rdoc-appr{width:1%;text-align:right;white-space:nowrap;color:var(--ink-2);padding-left:24px}
+.rdoc-appr p{margin:0 0 8px}
+.rdoc-line{color:var(--ink-mute)}
+
+.rdoc-table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:900px}
+.rdoc-table th,.rdoc-table td{border:1px solid var(--line);padding:8px 10px;vertical-align:middle}
+.rdoc-table th{background:#F7F9FC;color:var(--ink);font-weight:600;text-align:left}
+/* числовые ячейки не переносим: суммы и «10 %» читаются одной строкой */
+.rdoc-table .rdoc-n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rdoc-table tbody tr:nth-child(even){background:#FBFCFE}
+.rdoc-sub td,.rdoc-tot td{font-weight:600;color:var(--ink);background:var(--surface-2)}
+/* свод «Аншлаг / Реализовано» — узкая таблица, свой минимум */
+.rdoc-sum{min-width:620px}
+
+.rdoc-sign{margin:0 0 18px;color:var(--ink)}
+.rdoc-sign p{margin:0 0 12px}
+.rdoc-code{margin:0;color:var(--ink-mute);font-size:.84rem}
+
+.rdoc-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;
+  padding-top:18px;border-top:1px solid var(--line)}
+/* цвета взяты из токенов --bad/--ok: белым по ним контраст проходит AA,
+   а «зелёный Excel / красный Word» с макета остаётся узнаваемым */
+.rdoc-word{background:var(--bad);border-color:var(--bad);color:#fff}
+.rdoc-word:hover{background:#8F1E17;border-color:#8F1E17}
+.rdoc-excel{background:var(--ok);border-color:var(--ok);color:#fff}
+.rdoc-excel:hover{background:#0A5C3E;border-color:#0A5C3E}
+
 @media(max-width:900px){
   /* «или» между колонками на узком экране только мешает */
   .rv-form{grid-template-columns:1fr}
   .rv-col-mid{display:none}
   .top .rv-fav{align-self:flex-start}
+  /* на узком экране шапка бланка складывается в столбик */
+  .rdoc-top,.rdoc-top tbody,.rdoc-top tr,.rdoc-top td{display:block;width:auto}
+  .rdoc-appr{text-align:left;padding:14px 0 0;white-space:normal}
 }
 
 /* ============================================================ SECTION STUB */

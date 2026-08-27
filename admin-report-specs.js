@@ -20,6 +20,16 @@
                 type: "text" | "int" | "money" | "pct"
                 on:false — столбец есть, но по умолчанию снят
      rows()   — данные демо-таблицы (детерминированные)
+     doc      — бланк документа (admin-report-doc.js): шапка,
+                строки итогов, свод, код отчёта. Нет doc →
+                результат покажется обычной таблицей.
+       code       — код отчёта в подвале бланка («PPr2»)
+       caption    — подзаголовок под наименованием театра
+       ticketSet  — номер билетного комплекта
+       invites()  — строка «Всего пригласительных:»
+       totals(rows)  — строка «Всего:» (проценты не суммируются,
+                       считаются отдельно, поэтому это функция)
+       summary(rows) — свод «Аншлаг / Реализовано»
 
    Отчёта нет в этой таблице → страница покажет универсальную форму
    и честно скажет, что параметры ещё не заведены. Молча
@@ -58,6 +68,24 @@
     "Щелкунчик",
   ];
 
+  /* Аншлаг — зал целиком, по зонам из admin-store.js:
+       партер    166 × 3500 =   581 000
+       амфитеатр 300 × 2200 =   660 000
+       балкон    120 × 1200 =   144 000
+       ложа       24 × 5000 =   120 000
+                  610          1 505 000
+     Средняя цена по залу — 2467 ₽; цены продавцов ходят вокруг неё,
+     иначе «реализовано» перевалит за аншлаг и в своде выйдет 104 %. */
+  var HOUSE     = 610;
+  var HOUSE_SUM = 1505000;
+
+  /* Доли продавцов в проданных местах (в сумме 1) и сколько мест
+     ушло всего. Держим ниже аншлага, иначе проценты в своде
+     выходят за 100 и бланк выглядит сломанным. */
+  var SHARE      = [0.28, 0.22, 0.14, 0.11, 0.12, 0.08, 0.05];
+  var SOLD_TOTAL = 556;   /* 91 % аншлага */
+  var INVITES    = 24;    /* пригласительные бесплатные → суммы нулевые */
+
   function eventOptions() {
     var S = window.AdminStore && window.AdminStore.state;
     var ev = (S && Array.isArray(S.EVENTS)) ? S.EVENTS : [];
@@ -78,43 +106,100 @@
       { kind: "group",  id: "range",  col: "right", addon: "Диапазон событий", control: "daterange" },
       { kind: "group",  id: "show",   col: "left",  addon: "Выберите мероприятие",
         control: "select", options: SHOWS },
-      { kind: "check",  id: "invites", col: "right", label: "Показывать пригласительные отдельно" },
+      /* флажок управляет бланком: снят — пригласительные не пропадают,
+         а сворачиваются в строку «Всего:» */
+      { kind: "check",  id: "invites", col: "right", on: true,
+        label: "Показывать пригласительные отдельно" },
     ],
+    /* Продано / Баланс продажи / Возврат в бланке идут парой
+       «Число | Сумма» под общей надстройкой — это group.
+       Продавец нельзя снять: без него строки теряют подпись. */
     columns: [
-      { id: "seller",   label: "Продавец",              type: "text"  },
-      { id: "sold",     label: "Продано",               type: "int"   },
-      { id: "balance",  label: "Баланс продажи",        type: "money" },
-      { id: "refund",   label: "Возврат",               type: "int"   },
-      { id: "fz193",    label: "Уд. по 193-ФЗ",         type: "money" },
-      { id: "pct",      label: "%",                     type: "pct"   },
-      { id: "fee",      label: "Вознаграж.",            type: "money" },
+      { id: "seller",   label: "Продавец", type: "text", fixed: true },
+      { id: "soldCnt",  group: "Продано",        label: "Число", type: "int"   },
+      { id: "soldSum",  group: "Продано",        label: "Сумма", type: "money" },
+      { id: "balCnt",   group: "Баланс продажи", label: "Число", type: "int"   },
+      { id: "balSum",   group: "Баланс продажи", label: "Сумма", type: "money" },
+      { id: "refCnt",   group: "Возврат",        label: "Число", type: "int"   },
+      { id: "refSum",   group: "Возврат",        label: "Сумма", type: "money" },
+      { id: "fz193",    group: "Уд. по 193-ФЗ",  label: "Сумма", type: "money" },
+      { id: "pct",      label: "%",                      type: "pct"   },
+      { id: "fee",      label: "Вознаграж.",             type: "money" },
       { id: "feeFz",    label: "Вознаграж. вкл. 193-ФЗ", type: "money" },
-      { id: "income",   label: "Доход",                 type: "money" },
-      { id: "incomeFz", label: "Доход вкл. 193-ФЗ",     type: "money" },
+      { id: "income",   label: "Доход",                  type: "money" },
+      { id: "incomeFz", label: "Доход вкл. 193-ФЗ",      type: "money" },
     ],
     rows: function () {
       var rnd = seeded(20260608);
       return SELLERS.map(function (name, i) {
-        var sold    = 40 + Math.floor(rnd() * 460);
-        var refund  = Math.floor(rnd() * Math.max(2, sold * 0.06));
-        var avg     = 1200 + Math.floor(rnd() * 2600);
-        var balance = (sold - refund) * avg;
+        var soldCnt = Math.round(SOLD_TOTAL * SHARE[i]);
+        /* средний чек продавца пляшет вокруг средней цены зала, а не
+           вокруг отдельного числа: иначе «реализовано» в своде легко
+           обгоняет аншлаг и процент уходит за 100 */
+        var avg     = Math.round(HOUSE_SUM / HOUSE * (0.85 + rnd() * 0.3));
+        var refCnt  = Math.floor(rnd() * Math.max(1, soldCnt * 0.05));
+        var soldSum = soldCnt * avg;
+        var refSum  = refCnt * avg;
+        var balCnt  = soldCnt - refCnt;
+        var balSum  = soldSum - refSum;
         var pct     = [10, 0, 12, 12, 8, 0, 6][i % 7];
-        var fee     = Math.round(balance * pct / 100);
-        var fz193   = Math.round(balance * 0.02);
+        var fee     = Math.round(balSum * pct / 100);
+        /* формулы 193-ФЗ взяты из прежней версии спеки как есть и
+           требуют сверки с рабочей системой: «вкл. 193-ФЗ» у
+           вознаграждения прибавляет удержание, у дохода — вычитает */
+        var fz193   = Math.round(balSum * 0.02);
         return {
           seller: name,
-          sold: sold,
-          balance: balance,
-          refund: refund,
+          soldCnt: soldCnt, soldSum: soldSum,
+          balCnt: balCnt,   balSum: balSum,
+          refCnt: refCnt,   refSum: refSum,
           fz193: fz193,
           pct: pct,
           fee: fee,
           feeFz: fee + fz193,
-          income: balance - fee,
-          incomeFz: balance - fee - fz193,
+          income: balSum - fee,
+          incomeFz: balSum - fee - fz193,
         };
       });
+    },
+    doc: {
+      code: "PPr2",
+      caption: "Отчет о продаже билетов по мероприятию",
+      ticketSet: 16,
+      invites: function () {
+        return {
+          seller: "Всего пригласительных:",
+          soldCnt: INVITES, soldSum: 0,
+          balCnt: INVITES,  balSum: 0,
+          refCnt: 0,        refSum: 0,
+          fz193: 0, pct: 0, fee: 0, feeFz: 0, income: 0, incomeFz: 0,
+        };
+      },
+      totals: function (rows) {
+        var t = { seller: "Всего:" };
+        ["soldCnt", "soldSum", "balCnt", "balSum", "refCnt", "refSum",
+         "fz193", "fee", "feeFz", "income", "incomeFz"].forEach(function (k) {
+          t[k] = rows.reduce(function (a, r) { return a + (r[k] || 0); }, 0);
+        });
+        /* итоговый % — не сумма процентов, а вознаграждение к балансу */
+        t.pct = t.balSum ? Math.round(t.fee / t.balSum * 100) : 0;
+        return t;
+      },
+      summary: function (rows) {
+        var seats = rows.reduce(function (a, r) { return a + (r.balCnt || 0); }, 0);
+        var money = rows.reduce(function (a, r) { return a + (r.balSum || 0); }, 0);
+        var fz    = rows.reduce(function (a, r) { return a + (r.fz193  || 0); }, 0);
+        var full  = HOUSE_SUM;
+        return {
+          head: ["", "Аншлаг", "Реализовано", "Реализовано вкл. 193-ФЗ", "%"],
+          rows: [
+            { label: "Кол-во мест", type: "int",
+              cells: [HOUSE, seats, seats, Math.round(seats / HOUSE * 100)] },
+            { label: "На сумму", type: "money",
+              cells: [full, money, money + fz, Math.round(money / full * 100)] },
+          ],
+        };
+      },
     },
   };
 
@@ -148,7 +233,7 @@
       { kind: "check", id: "invites", col: "right", label: "Показывать пригласительные отдельно" },
     ],
     columns: [
-      { id: "show",     label: "Мероприятие",        type: "text"  },
+      { id: "show",     label: "Мероприятие",        type: "text", fixed: true },
       { id: "sold",     label: "Продано",            type: "int"   },
       { id: "cash",     label: "Наличные",           type: "money" },
       { id: "card",     label: "Банковская карта",   type: "money" },
@@ -173,6 +258,23 @@
         return { show: name, sold: sold, cash: cash, card: card, sbp: sbp,
                  pushkin: pushkin, cashless: cashless, total: total };
       });
+    },
+    /* Бланк тот же, что у № 3 — шапка, подписи, код. Строки
+       «Всего пригласительных:» и свода «Аншлаг» здесь НЕТ: на снимке
+       этого отчёта результат не виден, выдумывать их нельзя. */
+    doc: {
+      code: "PPr2",
+      caption: "Отчет о продаже билетов по мероприятию " +
+               "с разбивкой оплаты в кассе по типам",
+      ticketSet: 16,
+      totals: function (rows) {
+        var t = { show: "Всего:" };
+        ["sold", "cash", "card", "sbp", "pushkin", "cashless", "total"]
+          .forEach(function (k) {
+            t[k] = rows.reduce(function (a, r) { return a + (r[k] || 0); }, 0);
+          });
+        return t;
+      },
     },
   };
 

@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="admin.css?v=8" />
+<link rel="stylesheet" href="admin.css?v=9" />
 </head>
 <body class="admin" data-page="reports">
 
@@ -82,6 +82,12 @@
         <h2>Результат</h2>
       </div>
       <div id="repResult"></div>
+
+      <!-- выгрузка бланка: та же разметка, что на экране -->
+      <div class="rdoc-actions" id="repDocActions" hidden>
+        <button class="btn rdoc-word"  id="repWord"  type="button">Открыть в Word</button>
+        <button class="btn rdoc-excel" id="repExcel" type="button">Открыть в Excel</button>
+      </div>
     </section>
   </div>
 </main>
@@ -91,7 +97,8 @@
 <script src="admin-nav.js?v=1"></script>
 <script src="admin-store.js?v=3"></script>
 <script src="admin-reports.js?v=3"></script>
-<script src="admin-report-specs.js?v=3"></script>
-<script src="admin-report-view.js?v=3"></script>
+<script src="admin-report-specs.js?v=4"></script>
+<script src="admin-report-doc.js?v=1"></script>
+<script src="admin-report-view.js?v=4"></script>
 </body>
 </html>
