@@ -1,5 +1,5 @@
 /* ============================================================
-   ТБДТ · Кабинет администратора — карточка реферальной метки
+   Технологии творчества · Кабинет администратора — карточка реферальной метки
    referral.html?id=<id> — правка, без id — новая метка.
 
    Поле на форме одно, «Название»: краткое название и ссылка
@@ -22,7 +22,7 @@
   /* ---- метки нет ---- */
   if (!isNew && !item) {
     $("#refTitle").textContent = "Метка не найдена";
-    document.title = "ТБДТ · Кабинет администратора · Метка не найдена";
+    document.title = "Технологии творчества · Кабинет администратора · Метка не найдена";
     $("#refCrumbTail").textContent = "Метка не найдена";
     $("#refBody").innerHTML =
       '<section class="panel pad stub">' +
@@ -37,7 +37,7 @@
   var title = isNew ? "Новая метка" : "Метка «" + item.name + "»";
   $("#refTitle").textContent = title;
   $("#refCrumbTail").textContent = isNew ? "Новая метка" : item.name;
-  document.title = "ТБДТ · Кабинет администратора · " + title;
+  document.title = "Технологии творчества · Кабинет администратора · " + title;
 
   var nameEl = $("#refName");
   nameEl.value = isNew ? "" : item.name;

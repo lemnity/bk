@@ -1,5 +1,5 @@
 /* ============================================================
-   ТБДТ · Театральная касса — interaction logic (light)
+   Технологии творчества · Театральная касса — interaction logic (light)
    Hall plan reconstructed from the venue layout:
    top parterre + side boxes, three amphitheatre blocks,
    and front balcony clusters.

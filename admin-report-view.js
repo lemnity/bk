@@ -1,5 +1,5 @@
 /* ============================================================
-   ТБДТ · Кабинет администратора — страница формирования отчёта
+   Технологии творчества · Кабинет администратора — страница формирования отчёта
    report.html?no=<номер>. Заголовок и хлебные крошки берём из
    каталога (admin-reports.js), параметры и столбцы — из спеки
    (admin-report-specs.js). Спеки нет → универсальная форма и
@@ -18,7 +18,7 @@
   /* ---- отчёт не найден ---- */
   if (!rep) {
     $("#repTitle").textContent = "Отчёт не найден";
-    document.title = "ТБДТ · Кабинет администратора · Отчёт не найден";
+    document.title = "Технологии творчества · Кабинет администратора · Отчёт не найден";
     $("#repCrumbTail").textContent = "Отчёт не найден";
     $("#repBody").innerHTML =
       '<section class="panel pad stub">' +
@@ -36,7 +36,7 @@
   var title = (spec && spec.title) || rep.name;
   $("#repTitle").textContent = title;
   $("#repCrumbTail").textContent = no + ". " + rep.name;
-  document.title = "ТБДТ · Кабинет администратора · " + title;
+  document.title = "Технологии творчества · Кабинет администратора · " + title;
 
   /* ---- параметры ---- */
   var FALLBACK_FIELDS = [

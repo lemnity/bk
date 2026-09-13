@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>ТБДТ · Кабинет администратора</title>
+<title>Технологии творчества · Кабинет администратора</title>
 <meta name="description" content="Раздел кабинета администратора в наполнении." />
 <meta name="robots" content="noindex" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="admin.css?v=12" />
+<link rel="stylesheet" href="admin.css?v=14" />
 </head>
 <body class="admin">
 
@@ -21,7 +21,7 @@
 <!-- ░░░ SIDEBAR ░░░ -->
 <aside class="side">
   <a class="side-brand" href="index.html">
-    <img src="assets/logo.png" alt="Театр Либерта" />
+    <img src="assets/logo.png" alt="Технологии творчества" />
     <span class="sb-cap">Кабинет<br>администратора</span>
   </a>
 
@@ -42,7 +42,7 @@
 <main class="main">
   <header class="top">
     <div class="top-title">
-      <p class="crumb" id="crumb">ТБДТ · Кабинет</p>
+      <p class="crumb" id="crumb">Технологии творчества · Кабинет</p>
       <h1 id="pageTitle">Раздел</h1>
     </div>
   </header>
@@ -55,21 +55,21 @@
   </section>
 </main>
 
-<script src="admin-nav.js?v=4"></script>
+<script src="admin-nav.js?v=6"></script>
 <script>
   (function () {
     const page = document.body.dataset.page;
     const item = window.AdminNav && window.AdminNav.find(page);
     if (!item) {
       document.getElementById("pageTitle").textContent = "Раздел не найден";
-      document.getElementById("crumb").textContent = "ТБДТ · Кабинет";
+      document.getElementById("crumb").textContent = "Технологии творчества · Кабинет";
       return;
     }
     document.getElementById("pageTitle").textContent = item.label;
     document.getElementById("stubMark").textContent = item.icon;
     document.getElementById("crumb").textContent =
-      "ТБДТ · " + (item.group ? item.group.label : "Кабинет");
-    document.title = "ТБДТ · Кабинет администратора · " + item.label;
+      "Технологии творчества · " + (item.group ? item.group.label : "Кабинет");
+    document.title = "Технологии творчества · Кабинет администратора · " + item.label;
   })();
 </script>
 </body>

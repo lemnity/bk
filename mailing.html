@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Технологии творчества · Кабинет администратора · Добавить Email рассылку</title>
+<meta name="description" content="Кабинет администратора: создание email-рассылки и конструктор письма." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=14" />
+</head>
+<body class="admin" data-page="mailing">
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Технологии творчества" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">Технологии творчества · Маркетинг</p>
+      <h1 id="mvTitle">Добавить Email рассылку</h1>
+    </div>
+    <span class="int-dirty" id="mvDirty" hidden>Есть несохранённые изменения</span>
+  </header>
+
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="admin.html">Консоль</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <a href="mailings.html">Email рассылки</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <span class="crumbs-cur" id="mvCrumbTail">Добавление</span>
+  </nav>
+
+  <div id="mvBody">
+    <p class="rv-notice" id="mvRo" hidden></p>
+
+    <section class="panel pad">
+      <div class="mv-grid">
+        <div class="mv-f">
+          <div class="mv-l">
+            <label for="mvAud">Целевая аудитория</label>
+            <span class="mv-count" id="mvCount"></span>
+          </div>
+          <select id="mvAud">
+            <option value="all">Все подписчики</option>
+            <option value="list">Указать адреса</option>
+          </select>
+        </div>
+
+        <div class="mv-f">
+          <div class="mv-l">
+            <label for="mvDist">Включить распространителей тоже?</label>
+            <span class="mv-help" title="Распространители — партнёры, продающие билеты от имени театра. Они не подписчики, но получат то же письмо.">?</span>
+          </div>
+          <label class="mv-check"><input type="checkbox" id="mvDist" /><span>да, добавить распространителей</span></label>
+        </div>
+
+        <div class="mv-f">
+          <div class="mv-l"><label for="mvPromo">Использование промокода в заказе</label></div>
+          <select id="mvPromo"></select>
+        </div>
+      </div>
+
+      <div class="mv-f mv-wide" id="mvListWrap" hidden>
+        <div class="mv-l"><label for="mvEmails">Адреса получателей</label></div>
+        <input id="mvEmails" type="text" autocomplete="off" spellcheck="false"
+               placeholder="ivanov@mail.ru, petrova@yandex.ru" />
+      </div>
+
+      <div class="mv-f mv-wide">
+        <div class="mv-l"><label for="mvName">Заголовок письма</label></div>
+        <input id="mvName" type="text" autocomplete="off" placeholder="Например: Премьера «Гамлета» 12 октября" />
+      </div>
+
+      <div class="mv-f mv-wide">
+        <div class="mv-l"><label for="mvWhen">Время отправки</label></div>
+        <input id="mvWhen" type="datetime-local" />
+      </div>
+
+      <p class="mv-throttle" id="mvThrottle" hidden></p>
+    </section>
+
+    <section class="panel pad">
+      <div class="mv-l"><label>Текст письма</label></div>
+      <div id="mvLetter"></div>
+      <p class="ad-err" id="mvErr" role="alert" hidden></p>
+
+      <div class="int-actions" id="mvActions">
+        <button class="btn btn-plain" id="mvDraft" type="button">Сохранить черновик</button>
+        <button class="btn btn-gold"  id="mvSend"  type="button">Отправить рассылку</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-nav.js?v=6"></script>
+<script src="admin-store.js?v=7"></script>
+<script src="admin-audiences.js?v=2"></script>
+<script src="admin-letter.js?v=1"></script>
+<script src="admin-mailings.js?v=1"></script>
+<script src="admin-mailing-view.js?v=1"></script>
+</body>
+</html>

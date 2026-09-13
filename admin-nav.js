@@ -1,5 +1,5 @@
 /* ============================================================
-   ТБДТ · Кабинет администратора — навигация сайдбара
+   Технологии творчества · Кабинет администратора — навигация сайдбара
    Единый источник структуры меню: дерево описано здесь, разметка
    рендерится в #sideNav на каждой странице кабинета. Активный пункт
    определяется по атрибуту data-page у <body>.
@@ -64,8 +64,8 @@
     {
       id: "marketing", label: "Маркетинг", icon: "◆",
       items: [
-        { page: "ticket-ads",  label: "Реклама на билетах",   icon: "▭" },
-        { page: "mailing",     label: "Email рассылки",       icon: "✉" },
+        { page: "ticket-ads",  label: "Реклама на билетах",   icon: "▭", href: "ticket-ads.html" },
+        { page: "mailing",     label: "Email рассылки",       icon: "✉", href: "mailings.html" },
         { page: "subscribers", label: "Подписчики",           icon: "⊚" },
         { page: "campaigns",   label: "Акции",                icon: "✧" },
         { page: "social",      label: "Соц. сети",            icon: "⊛" },

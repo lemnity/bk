@@ -1,5 +1,5 @@
 /* ============================================================
-   ТБДТ · Кабинет администратора (demo) — interaction logic
+   Технологии творчества · Кабинет администратора (demo) — interaction logic
    Pure-JS dashboard: KPIs, finance status, SVG charts,
    live price editor, analytics bars and a ledger.
    All data is illustrative (demo).

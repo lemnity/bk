@@ -1,5 +1,5 @@
 /* ============================================================
-   ТБДТ · Кабинет администратора — NAVY CABINET
+   Технологии творчества · Кабинет администратора — NAVY CABINET
    Та же система, что и на сайте: холодный светлый холст, белые
    карточки, мягкое скругление, сдержанная тень, один тёмно-синий
    акцент. Структуру держат КРАЯ КАРТОЧЕК, а не линейки.
@@ -794,7 +794,7 @@ a{color:inherit;text-decoration:none}
 .ref-nolink{color:var(--ink-mute);font-style:italic}
 
 /* подтверждение удаления прямо в строке — модалок в кабинете нет */
-.ref-confirm{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+.ref-confirm,.ad-confirm{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
   font-size:.82rem;color:var(--ink-2)}
 .btn-mini{font-family:var(--font-ui);font-size:.78rem;font-weight:500;cursor:pointer;
   border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);
@@ -821,6 +821,243 @@ a{color:inherit;text-decoration:none}
 @media(max-width:760px){
   .ref-base{flex:1 1 100%}
   .ref-toolbar>.btn{flex:1 1 100%}
+}
+
+/* ============================================================ РЕКЛАМА НА БИЛЕТАХ */
+/* верх: загрузка слева, требования к макету по центру, «Логи» справа */
+.ad-top{display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap}
+.ad-upload{flex:0 1 340px;min-width:0}
+.ad-upload-t{margin:0 0 10px;font-size:.85rem;font-weight:600;color:var(--ink)}
+#adFile{display:block;max-width:100%;margin-bottom:12px;font-family:var(--font-ui);font-size:.85rem;color:var(--ink-2)}
+#adFile::file-selector-button{font-family:var(--font-ui);font-size:.82rem;color:var(--ink-2);cursor:pointer;
+  background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:7px 13px;margin-right:10px}
+#adFile::file-selector-button:hover{background:var(--surface-2);color:var(--ink)}
+.ad-hint{margin:8px 0 0;font-size:.82rem;color:var(--accent)}
+
+.ad-specs{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.ad-spec p{margin:0 0 3px;font-size:.85rem;color:var(--accent)}
+.ad-spec-t{font-weight:600;font-size:.95rem !important;margin-bottom:6px !important}
+.ad-spec-x{color:var(--ink-mute) !important}
+
+.ad-logs-btn{flex:0 0 auto;background:var(--surface);color:var(--accent);border-color:var(--accent)}
+.ad-logs-btn:hover{background:var(--accent-tint)}
+.ad-logs-btn.is-on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ad-log-at{white-space:nowrap;color:var(--ink-mute);font-variant-numeric:tabular-nums}
+
+.ad-err{margin:14px 0 0;font-size:.82rem;line-height:1.55;color:var(--bad)}
+.ad-err-top{background:var(--bad-bg);border-radius:var(--r-sm);padding:11px 14px}
+
+/* фильтр «все / общие / для представлений» */
+.ad-filter{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.ad-filter label{display:inline-flex;align-items:center;gap:8px;font-size:.88rem;color:var(--ink-2);cursor:pointer}
+.ad-filter input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.ad-filter input:checked+span{color:var(--ink);font-weight:500}
+
+/* сетка макетов: колонки одинаковой ширины, высота — по содержимому,
+   поэтому align-items:start, иначе короткие карточки растягивались бы */
+.ad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px;align-items:start}
+.ad-card{border:1px solid var(--line);border-radius:var(--r);padding:14px;background:var(--surface);min-width:0}
+.ad-cap{margin:0 0 10px;font-size:.8rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ad-cap-x{color:var(--ink-mute);margin-left:6px}
+
+/* превью: макет вписываем целиком — обрезка соврала бы о том,
+   что попадёт на билет */
+.ad-shot{display:flex;align-items:center;justify-content:center;background:var(--surface-2);
+  border-radius:var(--r-sm);overflow:hidden;margin-bottom:12px}
+.ad-shot img{display:block;max-width:100%;object-fit:contain}
+.ad-shot-v img{width:100%;max-height:120px}
+.ad-shot-h img{max-height:300px}
+
+.ad-check{display:flex;align-items:flex-start;gap:9px;font-size:.84rem;color:var(--ink-2);cursor:pointer;margin-bottom:10px}
+.ad-check input{width:16px;height:16px;margin-top:2px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto}
+
+.ad-shows{margin-bottom:12px}
+.ad-shows.is-off{opacity:.5}
+.ad-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.ad-chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;font-size:.78rem;color:var(--ink);
+  background:var(--accent-tint);border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 10px}
+.ad-chip button{border:none;background:none;cursor:pointer;color:var(--ink-mute);font-size:.95rem;line-height:1;
+  padding:2px 5px;border-radius:999px}
+.ad-chip button:hover{background:var(--bad-bg);color:var(--bad)}
+.ad-pick{width:100%;font-family:var(--font-ui);font-size:.82rem;color:var(--ink-2);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);height:34px;padding:0 8px;cursor:pointer}
+.ad-pick:disabled{background:var(--surface-2);color:var(--ink-mute);cursor:not-allowed}
+.ad-pick:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.ad-warn{margin:0 0 8px;font-size:.78rem;line-height:1.5;color:var(--warn)}
+
+.ad-link{display:block;margin-bottom:10px}
+.ad-link span{display:block;font-size:.82rem;color:var(--ink-2);margin-bottom:6px}
+.ad-link input{width:100%;font-family:var(--font-ui);font-size:.84rem;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);height:36px;padding:0 11px;
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.ad-link input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.ad-link input.is-bad{border-color:var(--bad)}
+.ad-card .ad-err{margin:0 0 10px}
+
+.ad-foot{display:flex}
+.ad-del{width:100%}
+
+@media(max-width:760px){
+  .ad-upload,.ad-specs{flex:1 1 100%}
+  .ad-logs-btn{width:100%}
+  .ad-grid{grid-template-columns:1fr}
+}
+
+/* ============================================================ EMAIL РАССЫЛКИ */
+.ml-note{margin:0 0 18px;font-size:.88rem;line-height:1.6;color:var(--ink-2);
+  background:var(--accent-tint);border-radius:var(--r);padding:16px 20px}
+.ml-note b{color:var(--accent)}
+.ml-toolbar{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+
+.ml-table{font-size:.82rem}
+.ml-id{width:1%;white-space:nowrap;color:var(--ink-mute);font-variant-numeric:tabular-nums}
+.ml-at{white-space:nowrap;font-variant-numeric:tabular-nums}
+/* длинные списки адресов рвём, иначе таблица уезжает за экран */
+.ml-aud{max-width:240px;word-break:break-word;color:var(--ink-2)}
+.ml-st{white-space:nowrap}
+.ml-badge{display:inline-block;font-size:.75rem;font-weight:500;border-radius:999px;padding:3px 10px;
+  background:var(--surface-2);color:var(--ink-2)}
+.ml-badge.is-done{background:var(--ok-bg);color:var(--ok)}
+.ml-badge.is-queue{background:rgba(138,91,16,.10);color:var(--warn)}
+.ml-badge.is-part{background:rgba(138,91,16,.10);color:var(--warn)}
+.ml-badge.is-draft{background:var(--surface-2);color:var(--ink-mute)}
+
+/* раскрытая строка: письмо или получатели */
+.ml-detail>td{background:var(--bg);padding:18px 16px}
+.ml-detail-h{font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:12px}
+.ml-frame{width:100%;max-width:660px;height:420px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
+.ml-who{display:flex;flex-wrap:wrap;gap:8px}
+.ml-who-i{display:inline-flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink-2);
+  background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.ml-who-i b{font-weight:500;color:var(--ink-mute)}
+.ml-who-i.is-ok b{color:var(--ok)}
+.ml-who-i.is-warn b{color:var(--warn)}
+.ml-who-i.is-bad b{color:var(--bad)}
+
+/* ---- форма рассылки ---- */
+.mv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px 24px;margin-bottom:18px}
+.mv-f{min-width:0}
+.mv-wide{max-width:760px;margin-bottom:18px}
+.mv-l{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:7px}
+.mv-l label{font-size:.85rem;font-weight:600;color:var(--ink)}
+.mv-count{font-size:.8rem;color:var(--ink-mute);white-space:nowrap}
+.mv-help{flex:0 0 auto;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;
+  font-size:.7rem;font-weight:600;color:#fff;background:var(--ink-mute);cursor:help}
+.mv-f select,.mv-f input[type="text"],.mv-f input[type="datetime-local"]{
+  width:100%;font-family:var(--font-ui);font-size:.9rem;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);height:40px;padding:0 12px;
+  transition:border-color var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease)}
+.mv-f select:focus,.mv-f input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.mv-f select:disabled,.mv-f input:disabled{background:var(--surface-2);color:var(--ink-mute)}
+.mv-check{display:inline-flex;align-items:center;gap:9px;height:40px;font-size:.86rem;color:var(--ink-2);cursor:pointer}
+.mv-check input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.mv-throttle{margin:0;font-size:.84rem;line-height:1.55;color:var(--warn);
+  background:rgba(138,91,16,.08);border-radius:var(--r-sm);padding:11px 14px}
+
+/* ============================================================ КОНСТРУКТОР ПИСЬМА */
+.lt{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.lt-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:8px 12px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.lt-modes,.lt-tools{display:flex;align-items:center;gap:4px}
+.lt-bar button{width:34px;height:32px;border:1px solid transparent;background:none;border-radius:var(--r-sm);
+  cursor:pointer;color:var(--ink-2);font-size:.9rem;display:grid;place-items:center}
+.lt-bar button:hover{background:var(--surface);color:var(--accent)}
+.lt-bar button.is-on{background:var(--surface);border-color:var(--line-2);color:var(--accent)}
+.lt-sep{width:1px;height:20px;background:var(--line-2);margin:0 6px}
+
+.lt-body{display:flex;align-items:stretch;min-height:460px}
+.lt-stage{flex:1 1 auto;min-width:0;overflow:auto;background:var(--bg);padding:22px 16px;display:flex;justify-content:center}
+.lt-side{flex:0 0 280px;border-left:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.lt-narrow .lt-side{display:none}
+.lt-tabs{display:flex;border-bottom:1px solid var(--line)}
+.lt-tabs button{flex:1 1 0;border:none;background:none;cursor:pointer;padding:12px 8px;
+  font-family:var(--font-ui);font-size:.85rem;color:var(--ink-mute);border-bottom:2px solid transparent}
+.lt-tabs button.is-on{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.lt-pane{flex:1 1 auto;overflow-y:auto;padding:16px 16px 24px;max-height:560px}
+.lt-group{margin:0 0 14px;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
+.lt-empty{margin:0;font-size:.84rem;line-height:1.6;color:var(--ink-mute)}
+
+.lt-page{align-self:flex-start}
+.lt-canvas{max-width:100%;overflow:hidden;box-shadow:var(--sh-md);min-height:220px}
+.lt-frame{border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;height:560px;max-width:100%}
+.lt-code{width:100%;position:relative}
+.lt-code textarea{width:100%;height:520px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.76rem;line-height:1.55;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:14px;resize:vertical}
+.lt-copy{position:absolute;top:10px;right:12px;padding:6px 12px;font-size:.78rem}
+
+/* блок на холсте: обводка и микро-панель появляются по наведению */
+.lt-b{position:relative;outline:1px dashed transparent;outline-offset:-1px}
+.lt-b:hover{outline-color:var(--line-2)}
+.lt-b.is-sel{outline:2px solid var(--accent);outline-offset:-2px}
+.lt-b-in{pointer-events:none}
+.lt-b-tools{position:absolute;top:2px;right:2px;z-index:3;display:none;gap:2px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:2px;box-shadow:var(--sh-sm)}
+.lt-b:hover>.lt-b-tools,.lt-b.is-sel>.lt-b-tools{display:flex}
+.lt-b-tools button{width:24px;height:22px;border:none;background:none;cursor:pointer;border-radius:3px;
+  color:var(--ink-2);font-size:.74rem;line-height:1}
+.lt-b-tools button:hover{background:var(--surface-2);color:var(--accent)}
+.lt-b-tools button.danger:hover{background:var(--bad-bg);color:var(--bad)}
+
+/* «+» между блоками — тонкая полоса, разворачивающаяся в палитру */
+.lt-add{display:flex;flex-direction:column;align-items:center;padding:2px 0}
+/* «+» виден всегда, а не только по наведению: на пустом письме
+   невидимая кнопка — это экран, на котором нечего нажать */
+.lt-add-btn{width:30px;height:20px;border:none;border-radius:999px;cursor:pointer;
+  background:var(--surface-2);color:var(--ink-mute);font-size:.85rem;line-height:1;opacity:.75;
+  transition:opacity var(--t-fast) var(--ease),background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.lt-add:hover .lt-add-btn,.lt-add.is-open .lt-add-btn{opacity:1;background:var(--accent);color:#fff}
+/* Палитра — в обычном потоке, а не absolute. Холст обрезает всё за
+   своими краями (overflow:hidden ради скругления), и всплывающая
+   панель у пустого письма просто не была бы видна. */
+.lt-palette{width:calc(100% - 28px);margin:8px 0;display:grid;gap:8px;
+  /* колонки по ширине контейнера, а не экрана: та же палитра
+     открывается и внутри узкой колонки письма */
+  grid-template-columns:repeat(auto-fill,minmax(64px,1fr));
+  padding:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--sh-sm)}
+.lt-pal{display:flex;flex-direction:column;align-items:center;gap:6px;border:none;background:none;cursor:pointer;
+  font-family:var(--font-ui);font-size:.68rem;color:var(--ink-2);padding:0}
+.lt-pal-i{width:100%;height:40px;display:grid;place-items:center;background:var(--surface-2);
+  border-radius:var(--r-sm);font-size:.85rem;color:var(--ink)}
+.lt-pal:hover .lt-pal-i{background:var(--accent-tint);color:var(--accent)}
+
+/* колонки и контейнер на холсте */
+.lt-nest{pointer-events:auto}
+.lt-slots{display:flex;align-items:flex-start}
+.lt-slots-1{display:block}
+.lt-slot{flex:1 1 0;min-width:0;min-height:40px;outline:1px dashed var(--line);outline-offset:-1px}
+
+/* ---- панель свойств ---- */
+.lt-f{display:block;margin-bottom:18px}
+.lt-f-l{display:block;font-size:.8rem;color:var(--ink-2);margin-bottom:6px}
+.lt-f-h{display:block;font-size:.74rem;line-height:1.5;color:var(--ink-mute);margin-top:5px}
+.lt-f input[type="text"],.lt-f input[type="url"],.lt-f select,.lt-f textarea{
+  width:100%;font-family:var(--font-ui);font-size:.83rem;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);padding:8px 10px}
+.lt-f input[type="text"],.lt-f input[type="url"],.lt-f select{height:34px;padding:0 10px}
+.lt-f textarea{resize:vertical;line-height:1.5}
+.lt-f textarea.lt-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.76rem}
+.lt-f input:focus,.lt-f select:focus,.lt-f textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.lt-color{display:flex;align-items:center;gap:10px}
+.lt-color input[type="color"]{width:38px;height:32px;padding:0;border:1px solid var(--line-2);
+  border-radius:var(--r-sm);background:none;cursor:pointer}
+.lt-clear{border:none;background:none;cursor:pointer;font-family:var(--font-ui);font-size:.76rem;
+  color:var(--ink-mute);padding:0;text-align:left}
+.lt-clear:hover{color:var(--accent)}
+.lt-range{display:flex;align-items:center;gap:10px}
+.lt-range input[type="range"]{flex:1 1 auto;min-width:0;accent-color:var(--accent);cursor:pointer}
+.lt-range-v{flex:0 0 auto;min-width:42px;text-align:right;font-size:.78rem;font-weight:500;
+  color:var(--ink-2);font-variant-numeric:tabular-nums}
+.lt-align{display:flex;gap:6px}
+.lt-align button{flex:1 1 0;height:32px;border:1px solid var(--line-2);background:var(--surface);
+  border-radius:var(--r-sm);cursor:pointer;color:var(--ink-2);font-size:.85rem}
+.lt-align button.is-on{border-color:var(--accent);background:var(--accent-tint);color:var(--accent)}
+
+@media(max-width:900px){
+  .lt-body{flex-direction:column}
+  .lt-side{flex:1 1 auto;border-left:none;border-top:1px solid var(--line)}
+  .lt-pane{max-height:none}
 }
 
 /* ============================================================ SECTION STUB */

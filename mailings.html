@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Технологии творчества · Кабинет администратора · Email рассылки</title>
+<meta name="description" content="Кабинет администратора: email-рассылки по подписчикам театра." />
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="admin.css?v=14" />
+</head>
+<body class="admin" data-page="mailing">
+<!-- ░░░ SIDEBAR ░░░ -->
+<aside class="side">
+  <a class="side-brand" href="index.html">
+    <img src="assets/logo.png" alt="Технологии творчества" />
+    <span class="sb-cap">Кабинет<br>администратора</span>
+  </a>
+
+  <div class="side-profile">
+    <span class="avatar" aria-hidden="true">АВ</span>
+    <span class="sp-info">
+      <b>А. Винтур</b>
+      <em>директор по продажам</em>
+    </span>
+  </div>
+
+  <nav class="side-nav" id="sideNav" aria-label="Разделы кабинета"></nav>
+
+  <a class="side-back" href="index.html">← Вернуться на сайт</a>
+</aside>
+
+<!-- ░░░ MAIN ░░░ -->
+<main class="main">
+  <header class="top">
+    <div class="top-title">
+      <p class="crumb">Технологии творчества · Маркетинг</p>
+      <h1>Email рассылки</h1>
+    </div>
+  </header>
+
+  <nav class="crumbs" aria-label="Навигация">
+    <a href="admin.html">Консоль</a>
+    <span class="crumbs-sep" aria-hidden="true">/</span>
+    <span class="crumbs-cur">Email рассылки</span>
+  </nav>
+
+  <!-- правило «раз в 7 дней» считается, а не написано вручную -->
+  <p class="ml-note" id="mlNote"></p>
+
+  <section class="panel pad">
+    <div class="ml-toolbar">
+      <button class="btn btn-gold" id="mlAdd" type="button">Добавить</button>
+      <button class="btn btn-plain" id="mlArcBtn" type="button">Архив рассылок</button>
+    </div>
+    <div id="mlList"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="admin-nav.js?v=6"></script>
+<script src="admin-store.js?v=7"></script>
+<script src="admin-audiences.js?v=2"></script>
+<script src="admin-letter.js?v=1"></script>
+<script src="admin-mailings.js?v=1"></script>
+</body>
+</html>
