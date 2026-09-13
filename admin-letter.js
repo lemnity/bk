@@ -39,6 +39,20 @@
   var PAGE_W = 600;
   var PHONE_W = 375;
 
+  /* ---- загрузка картинок ----
+     Картинка ложится в письмо как data-URL: файлового хранилища у
+     витрины нет. Поэтому её ужимаем до двойной ширины письма и
+     держим общий бюджет на письмо — localStorage около пяти
+     мегабайт на весь кабинет, и одно письмо не должно его съесть.
+
+     ВАЖНО для боевой отправки: Gmail и Outlook НЕ показывают
+     картинки из data-URL. В рабочей системе загрузка должна класть
+     файл на сервер и возвращать обычный https-адрес — тогда здесь
+     меняется только тело uploadImage(). */
+  var IMG_MAX_BYTES = 512 * 1024;
+  var IMG_MAX_W = 1200;
+  var LETTER_BUDGET = 1200 * 1024;
+
   /* ------------------------------------------------------------
      Блоки
      ------------------------------------------------------------
@@ -112,7 +126,7 @@
       label: "Картинка", icon: "▨",
       make: function () { return { t: "image", src: "", alt: "", href: "", width: 100, align: "center", pad: 10 }; },
       fields: [
-        { k: "src",   kind: "url",   label: "Адрес картинки", placeholder: "https://…/banner.jpg" },
+        { k: "src",   kind: "image", label: "Картинка" },
         { k: "alt",   kind: "text",  label: "Подпись (alt)", hint: "Её увидят те, у кого картинки отключены." },
         { k: "href",  kind: "url",   label: "Ссылка с картинки", placeholder: "https://example.com" },
         { k: "width", kind: "range", label: "Ширина", min: 20, max: 100, unit: "%" },
@@ -376,6 +390,21 @@
         return head + "<textarea " + attr + ' rows="' + (f.rows || 4) + '"' +
           (f.mono ? ' class="lt-mono" spellcheck="false"' : "") + ">" + esc(val) + "</textarea>" + tail;
       }
+      if (f.kind === "image") {
+        return head + '<span class="lt-img">' +
+          (val
+            ? '<img class="lt-img-p" src="' + esc(val) + '" alt="Загруженная картинка" />'
+            : '<span class="lt-img-none">картинка не выбрана</span>') +
+          '<span class="lt-img-row">' +
+            '<label class="lt-img-up">' + (val ? "Заменить" : "Загрузить картинку") +
+              '<input type="file" accept="image/jpeg,image/png" data-img="' + esc(f.k) +
+              '" data-scope="' + esc(scope) + '" hidden /></label>' +
+            (val ? '<button type="button" class="lt-clear" data-imgoff="' + esc(f.k) +
+                   '" data-scope="' + esc(scope) + '">убрать</button>' : "") +
+          "</span>" +
+          '<span class="lt-f-h">JPG или PNG, до 500 Кб. Картинка ужимается до ' +
+          IMG_MAX_W + ' px по ширине.</span></span>' + tail;
+      }
       if (f.kind === "color") {
         return head + '<span class="lt-color"><input type="color" ' + attr +
           ' value="' + esc(val || "#000000") + '" />' +
@@ -511,6 +540,7 @@
 
       if (t.dataset.make) { addBlock(t.dataset.make); return; }
       if (t.dataset.clear) { clearField(t); return; }
+      if (t.dataset.imgoff) { setField(t.dataset.scope, t.dataset.imgoff, ""); return; }
       if (t.dataset.align) { setField(t.dataset.scope, t.dataset.f, t.dataset.align); return; }
 
       var host_b = t.closest(".lt-b");
@@ -544,6 +574,7 @@
     host.addEventListener("change", function (e) {
       var el = e.target;
       if (el.classList && el.classList.contains("lt-file")) { upload(el); return; }
+      if (el.dataset && el.dataset.img) { uploadImage(el); return; }
       if (!el.dataset || !el.dataset.f || !el.dataset.scope) return;
       if (el.type === "range" || el.type === "color") { draw(); return; }
       apply(el.dataset.scope, el.dataset.f, el.value);
@@ -632,6 +663,75 @@
       sel = null;
       tab = "style";
       commit("kill");
+    }
+
+    /* ---- картинка файлом ---- */
+    function uploadImage(input) {
+      var file = input.files && input.files[0];
+      var key = input.dataset.img;
+      var scope = input.dataset.scope;
+      input.value = "";
+      if (!file) return;
+
+      if (!/^image\/(jpeg|png)$/.test(file.type)) {
+        onChange(get(), "msg:Поддерживаются только JPG и PNG");
+        return;
+      }
+      if (file.size > IMG_MAX_BYTES) {
+        onChange(get(), "msg:Файл весит " + Math.round(file.size / 1024) +
+          " Кб — больше допустимых 500 Кб");
+        return;
+      }
+
+      var fr = new FileReader();
+      fr.onerror = function () { onChange(get(), "msg:Не удалось прочитать файл"); };
+      fr.onload = function () {
+        var img = new Image();
+        img.onerror = function () { onChange(get(), "msg:Файл повреждён — это не картинка"); };
+        img.onload = function () {
+          var packed = shrink(img);
+          /* бюджет считаем ДО записи: иначе письмо молча перестанет
+             сохраняться, и человек узнает об этом при перезагрузке */
+          var probe = JSON.parse(JSON.stringify(L));
+          var target = scope === "style" ? probe.style : null;
+          if (!target) {
+            /* блок ищем по тому же пути, что и в живом письме */
+            var arr = probe.blocks, pth = sel || [];
+            for (var i = 0; i + 1 < pth.length; i += 2) {
+              var b = arr[pth[i]];
+              arr = pth[i + 1] === "k" ? b.kids : b.cols[Number(String(pth[i + 1]).slice(1))];
+            }
+            target = arr[pth[pth.length - 1]];
+          }
+          if (!target) return;
+          target[key] = packed;
+          if (JSON.stringify(probe).length > LETTER_BUDGET) {
+            onChange(get(), "msg:Письмо стало бы слишком тяжёлым. Удалите одну из картинок " +
+              "или возьмите файл полегче");
+            return;
+          }
+          apply(scope, key, packed);
+          commit("img");
+          onChange(get(), "msg:Картинка загружена");
+        };
+        img.src = String(fr.result);
+      };
+      fr.readAsDataURL(file);
+    }
+
+    /* Не растим сверх исходника: апскейл только портит картинку
+       и раздувает запись. */
+    function shrink(img) {
+      var w = Math.min(img.naturalWidth || IMG_MAX_W, IMG_MAX_W);
+      var h = Math.round(w * (img.naturalHeight || 1) / (img.naturalWidth || 1));
+      var cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      var ctx = cv.getContext("2d");
+      /* белая подложка: прозрачный PNG иначе ляжет на чёрное */
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      return cv.toDataURL("image/jpeg", 0.82);
     }
 
     /* ---- шаблон файлом ---- */

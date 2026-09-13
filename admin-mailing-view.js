@@ -76,6 +76,8 @@
     mount: $("#mvLetter"),
     value: rec ? rec.letter : { blocks: [] },
     onChange: function (_, what) {
+      /* конструктор сам формулирует сообщения о загрузке картинок */
+      if (what && what.indexOf("msg:") === 0) { toast(what.slice(4)); return; }
       if (what === "upload-bad") { toast("Это не шаблон письма — в файле нет блоков"); return; }
       if (what === "download") { toast("Шаблон выгружен"); return; }
       if (what === "upload") { toast("Шаблон загружен"); }
