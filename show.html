@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Спектакль · Афиша</title>
+<meta name="description" content="Спектакль модного театра TURDUS: описание, создатели, расписание и покупка билетов." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=3" />
+<link rel="stylesheet" href="afisha.css?v=2" />
+</head>
+<body>
+
+<!-- ░░░ HEADER ░░░ -->
+<header class="site-head">
+  <div class="head-inner">
+    <a class="brand" href="index.html" aria-label="Технологии творчества — на главную">
+      <img class="brand-logo" src="assets/logo.png" alt="Технологии творчества" />
+    </a>
+    <nav class="head-nav">
+      <a href="index.html" class="is-current">Афиша</a>
+      <a href="admin.html" class="nav-admin">Кабинет</a>
+    </nav>
+  </div>
+</header>
+
+<!-- страница собирается в afisha.js по ?id=<спектакль> -->
+<main id="showPage"></main>
+
+<footer class="site-foot">
+  <span>© 2026 Технологии творчества</span>
+  <span class="foot-dot">·</span>
+  <span>Сделано с любовью к сцене</span>
+</footer>
+
+<script src="afisha.js?v=2"></script>
+</body>
+</html>

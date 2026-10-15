@@ -1,0 +1,176 @@
+/* ============================================================
+   Афиша — карточки спектаклей, «Подробнее» и модалка покупки.
+   Опирается на токены и компоненты styles.css (зал, заказ,
+   форма оформления, билет) и добавляет только своё.
+   ============================================================ */
+
+.head-nav a.is-current{color:var(--ink)}
+.head-nav a.is-current::after{right:0}
+
+/* ---------- шапка страницы ---------- */
+.page-head{max-width:var(--maxw);margin:0 auto;padding:clamp(36px,5vw,60px) var(--gutter) 0}
+.page-title{font-family:var(--font-disp);font-weight:500;font-size:clamp(2.2rem,5vw,3.1rem);letter-spacing:-.03em;line-height:1.05;margin-top:10px;color:var(--ink)}
+.page-lead{color:var(--ink-2);max-width:58ch;margin-top:12px;font-size:1rem}
+.af-toolbar{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;margin-top:28px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--font-ui);font-weight:500;font-size:.85rem;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;padding:7px 16px;cursor:pointer;transition:border-color var(--t-fast),background var(--t-fast),color var(--t-fast)}
+.chip:hover{border-color:var(--accent);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip .chip-n{opacity:.62;margin-left:6px;font-variant-numeric:tabular-nums}
+.af-count{font-size:.85rem;color:var(--ink-mute)}
+
+/* ---------- сетка карточек ---------- */
+.afisha{max-width:var(--maxw);margin:0 auto;padding:24px var(--gutter) clamp(56px,7vw,88px)}
+.af-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px}
+
+.af-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--sh-sm);display:flex;flex-direction:column;transition:transform .3s var(--ease),box-shadow .3s var(--ease);animation:cardIn .5s var(--ease) both}
+.af-card:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* постер: дуотон-подложка + литера на случай, если фото не загрузилось */
+.poster{position:relative;display:grid;place-items:center;overflow:hidden;background:linear-gradient(150deg,var(--h1),var(--h2))}
+.poster-mark{font-family:var(--font-disp);font-weight:500;font-size:4rem;color:rgba(255,255,255,.94)}
+.poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;transition:transform .6s var(--ease)}
+.af-poster-btn{display:block;position:relative;width:100%;padding:0;border:none;background:none;cursor:pointer;border-radius:0}
+.af-poster{aspect-ratio:4/3}
+.af-card:hover .af-poster img{transform:scale(1.04)}
+.badge{position:absolute;z-index:2;font-family:var(--font-ui);font-size:.62rem;font-weight:600;letter-spacing:.04em;padding:4px 10px;border-radius:999px}
+.badge-age{top:12px;left:12px;color:#fff;background:rgba(19,36,55,.66)}
+.badge-flag{top:12px;right:12px;color:var(--accent-deep);background:#fff;box-shadow:var(--sh-sm)}
+.badge-flag.low{color:var(--bad)}
+
+.af-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.af-genre{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.af-title{font-family:var(--font-disp);font-size:1.32rem;font-weight:500;color:var(--ink);line-height:1.18;letter-spacing:-.02em}
+.af-lead{font-size:.86rem;color:var(--ink-2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.af-meta{list-style:none;display:flex;flex-direction:column;gap:5px;font-size:.82rem;color:var(--ink-2)}
+.af-meta li{display:flex;align-items:center;gap:8px}
+.af-meta svg{width:14px;height:14px;flex:0 0 auto;color:var(--ink-mute)}
+.af-dates{display:flex;flex-wrap:wrap;gap:6px}
+.af-date{font-size:.72rem;font-weight:600;color:var(--ink-2);background:var(--surface-2);border-radius:999px;padding:3px 10px;font-variant-numeric:tabular-nums}
+.af-date.more{background:none;color:var(--ink-mute);padding-left:2px}
+.af-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.af-price{font-size:.82rem;color:var(--ink-mute)}
+.af-price b{font-family:var(--font-disp);font-weight:500;font-size:1.15rem;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:4px}
+.af-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:10px}
+.af-actions .btn{padding:11px 14px}
+
+/* ---------- страница спектакля ---------- */
+.af-title a{color:inherit;transition:color var(--t-fast)}
+.af-title a:hover{color:var(--accent)}
+.af-poster-btn{text-decoration:none}
+
+.sp-hero{min-height:clamp(520px,72vh,720px)}
+.sp-hero .hero-photo{animation:none}
+.sp-title{font-size:clamp(2.2rem,5.4vw,3.8rem);max-width:16ch}
+.sp-back{display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,.82);font-size:.86rem;font-weight:500;width:max-content;transition:color var(--t-fast)}
+.sp-back svg{width:16px;height:16px}
+.sp-back:hover{color:#fff}
+.sp-hero .hero-copy{max-width:780px}
+.sp-hero .hero-facts>div{flex:1 1 150px}
+
+.sp-body{max-width:var(--maxw);margin:0 auto;padding:clamp(48px,7vw,80px) var(--gutter) 0;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start}
+.sp-about p{color:var(--ink-2);line-height:1.7;margin-top:14px;max-width:68ch}
+.sp-about .section-eyebrow{margin-top:0}
+.sp-about .sp-lead{font-family:var(--font-disp);font-weight:400;font-size:clamp(1.25rem,2.2vw,1.55rem);line-height:1.4;letter-spacing:-.015em;color:var(--ink);margin-top:12px}
+.sp-side{display:flex;flex-direction:column;gap:16px}
+.sp-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--sh-sm)}
+.sp-h{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:12px}
+.sp-credits{display:flex;flex-direction:column;gap:12px}
+.sp-credits dt{font-size:.74rem;color:var(--ink-mute)}
+.sp-credits dd{font-size:.9rem;color:var(--ink);line-height:1.5}
+.sp-venue{display:flex;gap:10px;align-items:flex-start;font-size:.86rem;color:var(--ink-2);line-height:1.45}
+.sp-venue+.sp-venue{margin-top:12px}
+.sp-venue svg{width:16px;height:16px;flex:0 0 auto;margin-top:2px;color:var(--accent)}
+.sp-venue b{display:block;color:var(--ink);font-weight:500}
+
+.sp-section{max-width:var(--maxw);margin:0 auto;padding:clamp(48px,7vw,80px) var(--gutter) 0}
+.sp-section:last-child{padding-bottom:clamp(56px,7vw,88px)}
+.sp-all{color:var(--accent);font-weight:500}
+.sp-all:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* встроенный выбор мест: заказ липнет под шапкой сайта */
+.sp-hall .buy-order{top:88px}
+.sp-hall .buy-grid .hall-main{box-shadow:var(--sh-sm)}
+.sp-hall .section-note{max-width:52ch}
+
+.sp-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.sp-ph{display:block;aspect-ratio:3/2;border-radius:var(--r);overflow:hidden;background:var(--surface-2)}
+.sp-ph img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
+.sp-ph:hover img{transform:scale(1.04)}
+
+.sp-missing{padding-bottom:clamp(56px,8vw,96px)}
+.sp-missing .btn{margin-top:24px}
+
+/* ---------- модалка покупки ---------- */
+.buy-panel{width:min(1320px,100%);max-height:94vh;padding:26px clamp(16px,2.6vw,32px) 30px}
+.buy-head{display:flex;flex-wrap:wrap;gap:14px 32px;align-items:center;justify-content:space-between;padding-right:52px;margin-bottom:20px}
+.buy-show{display:flex;gap:16px;align-items:center;min-width:0}
+.buy-thumb{width:52px;height:64px;flex:0 0 auto;border-radius:var(--r-sm);overflow:hidden}
+.buy-thumb-in{width:100%;height:100%}
+.buy-thumb .poster-mark{font-size:1.4rem}
+.modal-panel:focus{outline:none}
+.buy-title{font-family:var(--font-disp);font-weight:500;font-size:clamp(1.3rem,2.4vw,1.7rem);letter-spacing:-.02em;line-height:1.15;margin-top:3px;color:var(--ink)}
+.buy-meta{font-size:.84rem;color:var(--ink-mute);margin-top:2px}
+
+.buy-steps{list-style:none;display:flex;align-items:center;gap:10px;counter-reset:step}
+.buy-steps li{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:500;color:var(--ink-mute);counter-increment:step}
+/* соединительная черта между шагами — фоном, чтобы ::before оставить под номер */
+.buy-steps li+li{padding-left:28px}
+.buy-steps li::before{content:counter(step);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-2);font-size:.7rem;font-variant-numeric:tabular-nums;flex:0 0 auto}
+.buy-steps li+li{background:linear-gradient(var(--line-2),var(--line-2)) left center/18px 1px no-repeat}
+.buy-steps li.is-current{color:var(--ink)}
+.buy-steps li.is-current::before{background:var(--accent);border-color:var(--accent);color:#fff}
+.buy-steps li.is-done{color:var(--ink-2)}
+.buy-steps li.is-done::before{content:"✓";background:var(--accent-tint);border-color:transparent;color:var(--accent)}
+
+.buy-view{animation:viewIn .32s var(--ease)}
+@keyframes viewIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.buy-sessions{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;padding:12px 16px;background:var(--surface-2);border-radius:var(--r);margin-bottom:18px}
+.bs-group{display:flex;align-items:center;gap:12px;min-width:0;max-width:100%}
+.bs-label{font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute);font-weight:600;flex:0 0 auto}
+.bs-dates,.bs-times{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0}
+.bs-dates::-webkit-scrollbar{display:none}
+.bs-date{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;font-family:var(--font-ui);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r-sm);padding:5px 12px;cursor:pointer;line-height:1.25;transition:border-color var(--t-fast),background var(--t-fast),color var(--t-fast)}
+.bs-date b{font-weight:500;font-size:.9rem;font-variant-numeric:tabular-nums}
+.bs-date small{font-size:.62rem;color:var(--ink-mute);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.bs-date:hover{border-color:var(--accent)}
+.bs-date[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.bs-date[aria-pressed="true"] small{color:rgba(255,255,255,.76)}
+.bs-times .time-chip{padding:7px 16px}
+
+.buy-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.buy-grid .hall-main{box-shadow:none}
+.buy-order{position:sticky;top:0;box-shadow:var(--sh-sm)}
+.buy-order .order-list{max-height:260px}
+.legend:empty{display:none}
+
+.btn-back{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-ui);font-weight:500;font-size:.84rem;color:var(--accent);background:none;border:none;cursor:pointer;padding:4px 0;margin-bottom:18px}
+.btn-back svg{width:16px;height:16px}
+.btn-back:hover{color:var(--accent-deep);text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- адаптив ---------- */
+@media (max-width:1040px){
+  .buy-grid{grid-template-columns:minmax(0,1fr)}
+  .buy-order{position:static;max-width:520px;width:100%;margin:0 auto}
+}
+@media (max-width:900px){
+  .sp-body{grid-template-columns:minmax(0,1fr)}
+  .sp-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:680px){
+  .head-nav a.is-current{display:inline}
+  .af-grid{grid-template-columns:minmax(0,1fr);gap:18px}
+  .modal{padding:0}
+  .modal-panel.buy-panel{max-height:100vh;height:100%;border-radius:0;padding:20px 16px 28px}
+  .buy-head{padding-right:44px}
+  .buy-steps li{font-size:.72rem}
+  .buy-steps li+li{padding-left:22px;background-size:12px 1px}
+  .bs-group{width:100%}
+  .sp-gallery{gap:8px}
+}
+@media (max-width:420px){
+  .buy-steps li:not(.is-current){font-size:0;gap:0}
+  .af-actions{grid-template-columns:1fr}
+}
