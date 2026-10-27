@@ -1155,3 +1155,30 @@ a.day-t:hover{color:var(--accent);text-decoration:underline}
   .top{align-items:flex-start;flex-direction:column}
   .period button,.ov-filter button{padding:8px 14px}
 }
+
+/* ============================================================ ДИАЛОГ (dlg-)
+   Общий модальный примитив: window.AdminDialog (admin-dialog.js). Только токены. */
+body.dlg-lock{overflow:hidden}
+.dlg-back{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:rgba(19,36,55,.48);animation:dlgFade var(--t-fast) var(--ease)}
+.dlg{position:relative;display:flex;flex-direction:column;width:100%;max-width:480px;max-height:calc(100vh - 48px);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-lg);
+  animation:dlgIn var(--t) var(--ease)}
+.dlg-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 0 24px}
+.dlg-title{font-family:var(--font-disp);font-size:1.15rem;font-weight:500;color:var(--ink);letter-spacing:-.02em;line-height:1.35}
+.dlg-x{flex:0 0 auto;width:32px;height:32px;margin:-4px 0 0;border:none;background:none;border-radius:var(--r-sm);
+  font-size:1.4rem;line-height:1;color:var(--ink-mute);cursor:pointer;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.dlg-x:hover{background:var(--surface-2);color:var(--ink)}
+.dlg-body{padding:14px 24px 4px;overflow-y:auto;font-size:.92rem;line-height:1.6;color:var(--ink-2)}
+.dlg-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;padding:18px 24px 22px}
+.dlg-x:focus-visible,.dlg-actions .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.dlg-danger{background:var(--bad);color:var(--surface);border-color:var(--bad);box-shadow:var(--sh-sm)}
+.dlg-danger:hover{background:color-mix(in srgb,var(--bad) 80%,var(--ink));border-color:color-mix(in srgb,var(--bad) 80%,var(--ink))}
+@keyframes dlgFade{from{opacity:0}to{opacity:1}}
+@keyframes dlgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (max-width:480px){
+  .dlg-back{padding:16px}
+  .dlg{max-width:none}
+  .dlg-actions .btn{flex:1 1 auto}
+}
