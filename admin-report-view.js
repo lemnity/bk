@@ -14,6 +14,8 @@
   var no = new URLSearchParams(location.search).get("no") || "";
   var rep = window.AdminReports.find(no);
   var spec = window.AdminReportSpecs.get(no);
+  /* модель отчёта, экран и выгрузки — общие с каталогом (admin-report-doc.js) */
+  var Doc = window.AdminReportDoc;
 
   /* ---- отчёт не найден ---- */
   if (!rep) {
@@ -144,16 +146,16 @@
     colHtml("right");
 
   /* ---- значения по умолчанию ----
-     Период операций (keys from/to) — весь журнал AdminReportData.range(),
-     чтобы первый «Показать отчёт» сразу дал данные; мероприятие и
-     прочие списки — первый вариант («Все»). У «Книги операций» период —
-     даты записей бухгалтерии, а не продаж: его не трогаем. */
-  if (spec && spec.kind !== "ledger" && window.AdminReportData) {
-    var span = window.AdminReportData.range();
+     Те же, что у выгрузки из каталога (Doc.defaults): период операций —
+     весь журнал, у «Книги операций» период пуст; списки — первый
+     вариант, флажки — f.on (их форма уже проставила сама). */
+  if (spec) {
+    var dflt = Doc.defaults(spec);
     fields.forEach(function (f) {
-      if (f.control !== "daterange" || !f.keys || f.keys[0] !== "from") return;
-      $("#f_" + f.id + "_from").value = span.min;
-      $("#f_" + f.id + "_to").value = span.max;
+      if (f.control !== "daterange") return;
+      var keys = f.keys || [f.id + "_from", f.id + "_to"];
+      $("#f_" + f.id + "_from").value = dflt[keys[0]];
+      $("#f_" + f.id + "_to").value = dflt[keys[1]];
     });
   }
 
@@ -198,31 +200,6 @@
       });
     });
   });
-
-  /* применённые параметры одной строкой — под заголовком результата.
-     «Все» / «не выбрано» (первый вариант списка) не пишем. */
-  function paramsLine() {
-    var out = [];
-    fields.forEach(function (f) {
-      if (!f.id || f.kind === "check" || f.kind === "or") return;
-      if (f.control === "daterange") {
-        var a = $("#f_" + f.id + "_from").value, b = $("#f_" + f.id + "_to").value;
-        if (a || b) {
-          out.push(f.addon + (a ? " с " + ruDate(a) : "") + (b ? " по " + ruDate(b) : ""));
-        }
-        return;
-      }
-      var el = $("#f_" + f.id);
-      if (!el) return;
-      if (el.tagName === "SELECT") {
-        if (el.selectedIndex <= 0) return;
-        out.push((f.addon ? f.addon + ": " : "") + el.options[el.selectedIndex].text);
-      } else if (el.value) {
-        out.push((f.addon ? f.addon + ": " : "") + (f.control === "date" ? ruDate(el.value) : el.value));
-      }
-    });
-    return out.length ? out.join(" · ") : "Все данные";
-  }
 
   /* ---- столбцы ---- */
   var shown = {};
@@ -277,146 +254,43 @@
   });
 
   /* ---- результат ---- */
-  var nf = new Intl.NumberFormat("ru-RU");
-  function cell(v, type) {
-    /* «|| 0»: возвраты считаются как −сумма, и пустой список даёт «-0 ₽» */
-    if (type === "money") return nf.format(Math.round(v) || 0) + " ₽";
-    if (type === "int")   return nf.format(v);
-    /* неразрывный пробел: по-русски перед % пробел нужен, но в узком
-       столбце обычный пробел рвёт значение на две строки */
-    if (type === "pct")   return v + "\u00A0%";
-    return String(v);
-  }
-
   var built = false;
-  /* модель бланка, показанная на экране: выгрузки берут её, а не форму —
-     иначе после правки параметров без «Показать отчёт» файл разойдётся
-     с экраном (G5) */
+  /* модель, показанная на экране (бланк или таблица): выгрузки берут
+     её, а не форму — иначе после правки параметров без «Показать отчёт»
+     файл разойдётся с экраном (G5) */
   var lastModel = null;
   var EMPTY = '<p class="rep-empty">Нет данных за выбранный период.</p>';
-
-  function renderTable() {
-    var cols = columns.filter(function (c) { return shown[c.id]; });
-    if (!cols.length) {
-      $("#repResult").innerHTML = '<p class="rep-empty">Не выбрано ни одного столбца.</p>';
-      return 0;
-    }
-    var rows = spec.rows(params());
-    if (!rows.length) {
-      $("#repResult").innerHTML = EMPTY;
-      return 0;
-    }
-    /* «Итого» — суммы int/money, кроме total:false (цены); доли %
-       и сальдо считает сама спека в total(rows) */
-    var totals = {};
-    cols.forEach(function (c) {
-      if ((c.type === "int" || c.type === "money") && c.total !== false) {
-        totals[c.id] = rows.reduce(function (a, r) { return a + (r[c.id] || 0); }, 0);
-      }
-    });
-    if (spec.total) {
-      var extra = spec.total(rows) || {};
-      cols.forEach(function (c) { if (c.id in extra) totals[c.id] = extra[c.id]; });
-    }
-
-    $("#repResult").innerHTML =
-      '<div class="table-wrap"><table class="dtable rv-table"><thead><tr>' +
-      cols.map(function (c) {
-        return '<th class="' + (c.type === "text" ? "" : "num") + '">' + esc(c.label) + "</th>";
-      }).join("") +
-      "</tr></thead><tbody>" +
-      rows.map(function (r) {
-        return "<tr>" + cols.map(function (c) {
-          var v = r[c.id];
-          return '<td class="' + (c.type === "text" ? "" : "num") + '">' +
-            (v === undefined || v === null ? "" : esc(cell(v, c.type))) + "</td>";
-        }).join("") + "</tr>";
-      }).join("") +
-      '</tbody><tfoot><tr>' +
-      cols.map(function (c, i) {
-        if (i === 0) return "<td>Итого</td>";
-        return '<td class="num">' + (c.id in totals ? esc(cell(totals[c.id], c.type)) : "") + "</td>";
-      }).join("") +
-      "</tr></tfoot></table></div>";
-    return rows.length;
-  }
-
-  /* ---- бланк документа ----
-     У отчёта со спекой doc результат — не таблица, а бланк: шапка
-     с «Утверждаю», итоги, свод, подписи. Ту же модель забирают
-     кнопки Word и Excel, поэтому собирается она в одном месте. */
-
-  function ruDate(v) {
-    if (!v) return "";
-    var p = v.split("-");
-    return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : v;
-  }
-
-  /* строка под названием бланка: мероприятие, по которому он построен
-     (выбранное или первое подходящее — см. doc.eventOf), и период
-     «Диапазон событий», если задан */
-  function eventLine(p) {
-    var parts = [];
-    var e = spec.doc.eventOf ? spec.doc.eventOf(p) : null;
-    if (e) parts.push(ruDate(e.date) + " · " + e.title + " · " + e.hall);
-    if (p.eventFrom || p.eventTo) {
-      parts.push("Диапазон событий" + (p.eventFrom ? " с " + ruDate(p.eventFrom) : "") +
-        (p.eventTo ? " по " + ruDate(p.eventTo) : ""));
-    }
-    return parts.join(" · ");
-  }
-
-  function docModel() {
-    var d = spec.doc;
-    var p = params();
-    var rows = spec.rows(p);
-    var inv  = d.invites ? d.invites(p) : null;
-    /* пригласительные всегда входят в «Всего:» и в свод; флажок решает
-       только, показывать ли их отдельной строкой */
-    var all  = inv ? rows.concat([inv]) : rows;
-    var sep  = !!($("#f_invites") && $("#f_invites").checked);
-    return {
-      org: window.AdminReportDoc.org,
-      title: title,
-      doc: d,
-      cols: columns.filter(function (c) { return shown[c.id]; }),
-      eventLine: eventLine(p),
-      rows: rows,
-      invites: sep ? inv : null,
-      totals:  d.totals  ? d.totals(all, p)  : null,
-      summary: d.summary ? d.summary(all, p) : null,
-    };
-  }
+  var EXPORTS = ["#repWord", "#repExcel", "#repCsv", "#repPrint"];
 
   /* выгрузки повторяют экран: нечего показать — нечего и выгружать */
   function setExports(on) {
-    ["#repWord", "#repExcel"].forEach(function (id) { $(id).disabled = !on; });
+    EXPORTS.forEach(function (id) { $(id).disabled = !on; });
   }
 
   function render() {
     var actions = $("#repDocActions");
-    /* у бланка применённые параметры — в его шапке (eventLine) */
-    $("#repParams").textContent = spec.doc ? "" : paramsLine();
-    $("#repParams").hidden = !!spec.doc;
-    if (!columns.filter(function (c) { return shown[c.id]; }).length) {
+    var cols = columns.filter(function (c) { return shown[c.id]; });
+    lastModel = null;
+    if (!cols.length) {
+      $("#repParams").textContent = "";
+      $("#repParams").hidden = true;
       $("#repResult").innerHTML = '<p class="rep-empty">Не выбрано ни одного столбца.</p>';
       actions.hidden = true;
-      lastModel = null;
       setExports(false);
       return;
     }
-    if (spec.doc) {
-      var m = docModel();
-      lastModel = m.rows.length ? m : null;
-      if (m.rows.length) window.AdminReportDoc.render($("#repResult"), m);
-      else $("#repResult").innerHTML = EMPTY;
-      actions.hidden = false;
-      setExports(m.rows.length > 0);
+    var m = Doc.model(spec, { no: no, title: title, params: params(), cols: cols });
+    /* у бланка применённые параметры — в его шапке (eventLine) */
+    $("#repParams").textContent = m.kind === "doc" ? "" : m.paramsLine;
+    $("#repParams").hidden = m.kind === "doc";
+    if (m.empty) {
+      $("#repResult").innerHTML = EMPTY;
     } else {
-      lastModel = null; /* таблица выгружается не бланком */
-      setExports(renderTable() > 0);
-      actions.hidden = true;
+      Doc.render($("#repResult"), m);
+      lastModel = m;
     }
+    actions.hidden = false;
+    setExports(!m.empty);
   }
 
   $("#repRun").addEventListener("click", function () {
@@ -438,10 +312,15 @@
   });
 
   [["#repWord", "word", "Документ Word сохранён"],
-   ["#repExcel", "excel", "Книга Excel сохранена"]].forEach(function (b) {
+   ["#repExcel", "excel", "Книга Excel сохранена"],
+   ["#repCsv", "csv", "Файл CSV сохранён"],
+   ["#repPrint", "print", ""]].forEach(function (b) {
     $(b[0]).addEventListener("click", function () {
       if (!built || !lastModel || $(b[0]).disabled) return;
-      window.AdminReportDoc.download(lastModel, b[1]);
+      /* печать — это сам экран: форма и кнопки скрыты @media print */
+      if (b[1] === "print") { window.print(); return; }
+      if (b[1] === "csv") Doc.downloadCsv(lastModel);
+      else Doc.download(lastModel, b[1]);
       toast(b[2]);
     });
   });
@@ -473,4 +352,15 @@
 
   buildColumnPicker();
   syncFav();
+
+  /* «⚙ Настроить» из каталога (setup=1): сразу открыть выбор столбцов
+     и поставить фокус в первое поле параметров */
+  if (new URLSearchParams(location.search).get("setup") === "1") {
+    if (canPick) {
+      colsMenu.hidden = false;
+      colsBtn.setAttribute("aria-expanded", "true");
+    }
+    var first = $("#repForm").querySelector("input, select");
+    if (first) first.focus();
+  }
 })();

@@ -1182,3 +1182,16 @@ body.dlg-lock{overflow:hidden}
   .dlg{max-width:none}
   .dlg-actions .btn{flex:1 1 auto}
 }
+
+/* «Печать / PDF» отчёта — печатается сам экран: без сайдбара, шапки,
+   формы параметров и кнопок, документ на всю ширину листа.
+   Блок стоит последним: узкие @media выше не должны его перебивать */
+@media print{
+  .side,.top,.crumbs,.rv-noprint,.rdoc-actions,.toast{display:none !important}
+  body.admin{background:var(--surface)}
+  .main{margin-left:0;padding:0;max-width:none}
+  .panel{border:none;box-shadow:none;border-radius:0;margin:0}
+  .panel.pad{padding:0}
+  .table-wrap,.rdoc-scroll{overflow:visible;border:none}
+  .rdoc-table,.rdoc-sum{min-width:0}
+}

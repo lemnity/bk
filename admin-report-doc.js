@@ -18,6 +18,12 @@
    Расплата: Excel при открытии предупреждает о несовпадении
    формата и расширения. Чтобы этого не было, нужен настоящий
    .xlsx (zip + OOXML) — отдельная работа, здесь её нет.
+
+   Модель отчёта (model) тоже собирается ЗДЕСЬ, одна на всех: её
+   показывает страница отчёта, её же выгружают Word, Excel, CSV и
+   печать, и её же строит build(no, params) для выгрузки из каталога
+   без открытия страницы. Табличный отчёт (спека без doc) — та же
+   модель с kind:"table": на экране и в файле одна разметка таблицы.
    ============================================================ */
 (function () {
   "use strict";
@@ -33,7 +39,8 @@
   function fmt(v, type, raw) {
     if (v === null || v === undefined || v === "") return "";
     if (raw) return String(v);                       /* Excel: число числом */
-    if (type === "money") return nf.format(Math.round(v)) + " ₽";
+    /* «|| 0»: возвраты считаются как −сумма, и пустой список даёт «-0 ₽» */
+    if (type === "money") return nf.format(Math.round(v) || 0) + " ₽";
     if (type === "int")   return nf.format(v);
     /* неразрывный пробел: по-русски перед % пробел нужен, но в узком
        столбце обычный пробел рвёт значение на две строки */
@@ -151,6 +158,44 @@
     return head + table + summaryHtml(m.summary, raw) + sign;
   }
 
+  /* ---- табличный отчёт ----
+     Разметка одна для экрана и для файла: на экране её оформляют
+     .dtable/.rv-table из admin.css, в файле — FILE_CSS. «Итого» —
+     в tfoot, первый столбец подписан. */
+  function tableHtml(m, raw) {
+    var num = function (c) { return c.type === "text" ? "" : "num"; };
+    return '<table class="dtable rv-table"><thead><tr>' +
+      m.cols.map(function (c) {
+        return '<th class="' + num(c) + '">' + esc(c.label) + "</th>";
+      }).join("") +
+      "</tr></thead><tbody>" +
+      m.rows.map(function (r) {
+        return "<tr>" + m.cols.map(function (c) {
+          return '<td class="' + num(c) + '">' +
+            esc(fmt(r[c.id], c.type, raw && c.type !== "text")) + "</td>";
+        }).join("") + "</tr>";
+      }).join("") +
+      "</tbody><tfoot><tr>" +
+      m.cols.map(function (c, i) {
+        if (i === 0) return "<td>Итого</td>";
+        return '<td class="num">' +
+          (c.id in m.totals ? esc(fmt(m.totals[c.id], c.type, raw)) : "") + "</td>";
+      }).join("") +
+      "</tr></tfoot></table>";
+  }
+
+  /* табличный отчёт в файле: название и применённые параметры —
+     то, что на экране стоит над таблицей */
+  function tableFileHtml(m, raw) {
+    return '<p class="rdoc-org-name">' + esc(m.title) + "</p>" +
+      '<p class="rdoc-cap">' + esc(m.paramsLine) + "</p>" +
+      tableHtml(m, raw);
+  }
+
+  function bodyHtml(m, raw) {
+    return m.kind === "doc" ? docHtml(m, raw) : tableFileHtml(m, raw);
+  }
+
   /* ---- файл для Word / Excel ---- */
   var FILE_CSS = [
     "@page{size:29.7cm 21cm;margin:1.2cm}",
@@ -169,13 +214,19 @@
     ".rdoc-sub td,.rdoc-tot td{font-weight:bold;background:#F5F5F5}",
     ".rdoc-sign{margin-top:14pt}",
     ".rdoc-sign p{margin:0 0 10pt}",
+    /* табличный отчёт (kind:"table") — те же рамки, что у бланка */
+    ".rv-table th,.rv-table td{border:1px solid #808080;padding:3pt 5pt;" +
+      "font-size:9pt;vertical-align:middle}",
+    ".rv-table th{background:#EFEFEF;font-weight:bold;text-align:left}",
+    ".rv-table .num{text-align:right}",
+    ".rv-table tfoot td{font-weight:bold;background:#F5F5F5}",
   ].join("");
 
   function fileHtml(m, kind) {
     var xl = kind === "excel";
     var office = xl
       ? "<xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>" +
-        "<x:Name>" + esc(m.doc.code) + "</x:Name>" +
+        "<x:Name>" + esc(sheetName(m)) + "</x:Name>" +
         "<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>" +
         "</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml>"
       : "<xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>";
@@ -187,7 +238,13 @@
       "<title>" + esc(m.title) + "</title>" +
       "<!--[if gte mso 9]>" + office + "<![endif]-->" +
       "<style>" + FILE_CSS + "</style></head><body>" +
-      docHtml(m, xl) + "</body></html>";
+      bodyHtml(m, xl) + "</body></html>";
+  }
+
+  /* имя листа Excel: у бланка — код отчёта, у таблицы — номер;
+     символы \ / ? * [ ] : Excel в имени листа не принимает */
+  function sheetName(m) {
+    return String(m.kind === "doc" ? m.doc.code : "Отчёт " + m.no).replace(/[\\\/?*\[\]:]/g, "-");
   }
 
   function stamp() {
@@ -195,10 +252,15 @@
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
   }
 
-  function save(name, mime, html) {
+  /* otchet-<no>-<YYYY-MM-DD>.<ext>; «/» в номере («120/1») — дефис */
+  function fileName(no, ext) {
+    return "otchet-" + String(no).replace(/\//g, "-") + "-" + stamp() + "." + ext;
+  }
+
+  function save(name, mime, text) {
     /* BOM обязателен: без него Word и Excel читают файл в кодировке
        системы и кириллица превращается в кракозябры */
-    var blob = new Blob(["\uFEFF" + html], { type: mime + ";charset=utf-8" });
+    var blob = new Blob(["﻿" + text], { type: mime + ";charset=utf-8" });
     var url  = URL.createObjectURL(blob);
     var a    = document.createElement("a");
     a.href = url;
@@ -209,18 +271,207 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   }
 
+  /* ---- CSV ----
+     Как в admin-audience-view.js: «;», кавычки по необходимости, числа
+     сырыми (без разрядов и «₽»), иначе Excel примет столбец за текст.
+     Строки — ровно то, что на экране: данные, пригласительные (если
+     показаны отдельно), итог; у бланка после пустой строки — свод. */
+  function csvCell(v) {
+    var s = v === null || v === undefined ? "" : String(v);
+    return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function csvLine(list) { return list.map(csvCell).join(";"); }
+
+  function csv(m) {
+    var cols = m.cols;
+    var line = function (r) { return csvLine(cols.map(function (c) { return r[c.id]; })); };
+    var out = [csvLine(cols.map(function (c) {
+      return (c.group ? c.group + " · " : "") + c.label;
+    }))];
+    m.rows.forEach(function (r) { out.push(line(r)); });
+    if (m.kind === "doc") {
+      if (m.invites) out.push(line(m.invites));
+      if (m.totals) out.push(line(m.totals));
+      if (m.summary) {
+        out.push("");
+        out.push(csvLine(m.summary.head));
+        m.summary.rows.forEach(function (r) { out.push(csvLine([r.label].concat(r.cells))); });
+      }
+    } else {
+      out.push(csvLine(cols.map(function (c, i) {
+        return i === 0 ? "Итого" : (c.id in m.totals ? m.totals[c.id] : "");
+      })));
+    }
+    return out.join("\r\n");
+  }
+
+  /* ---- модель отчёта ---- */
+  function ruDate(v) {
+    if (!v) return "";
+    var p = String(v).split("-");
+    return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : String(v);
+  }
+
+  /* варианты списка: строка (значение = подпись) или { value, label } */
+  function optionList(f) {
+    var o = typeof f.options === "function" ? f.options() : (f.options || []);
+    return o.map(function (v) {
+      return v && typeof v === "object" ? { value: String(v.value), label: String(v.label) }
+                                        : { value: String(v), label: String(v) };
+    });
+  }
+  function isSelect(f) { return f.kind === "select" || (f.kind === "group" && f.control === "select"); }
+  function rangeKeys(f) { return f.keys || [f.id + "_from", f.id + "_to"]; }
+
+  /* Значения формы по умолчанию — те же, что ставит страница:
+     период операций (keys from/to) — весь журнал AdminReportData.range(),
+     чтобы первый «Показать отчёт» сразу дал данные; у «Книги операций»
+     период — даты записей бухгалтерии, его не трогаем. Списки — первый
+     вариант («Все»), флажки — on, остальное пусто. */
+  function defaults(spec) {
+    var p = {};
+    var span = spec.kind !== "ledger" && window.AdminReportData ? window.AdminReportData.range() : null;
+    (spec.fields || []).forEach(function (f) {
+      if (!f.id) return;
+      if (f.kind === "group" && f.control === "daterange") {
+        var k = rangeKeys(f), full = span && k[0] === "from";
+        p[k[0]] = full ? span.min : "";
+        p[k[1]] = full ? span.max : "";
+      } else if (f.kind === "check") {
+        p[f.id] = !!f.on;
+      } else if (isSelect(f)) {
+        var o = optionList(f);
+        p[f.id] = o.length ? o[0].value : "";
+      } else {
+        p[f.id] = "";
+      }
+    });
+    return p;
+  }
+
+  /* применённые параметры одной строкой — под заголовком результата.
+     «Все» / «не выбрано» (первый вариант списка) не пишем. */
+  function paramsLine(spec, p) {
+    var out = [];
+    (spec.fields || []).forEach(function (f) {
+      if (!f.id || f.kind === "check" || f.kind === "or") return;
+      var pre = f.addon ? f.addon + ": " : "";
+      if (f.control === "daterange") {
+        var k = rangeKeys(f), a = p[k[0]], b = p[k[1]];
+        if (a || b) out.push(f.addon + (a ? " с " + ruDate(a) : "") + (b ? " по " + ruDate(b) : ""));
+        return;
+      }
+      var v = p[f.id];
+      if (isSelect(f)) {
+        var o = optionList(f), i = -1;
+        o.forEach(function (x, j) { if (i < 0 && x.value === String(v)) i = j; });
+        if (i > 0) out.push(pre + o[i].label);
+      } else if (v) {
+        out.push(pre + (f.control === "date" ? ruDate(v) : v));
+      }
+    });
+    return out.length ? out.join(" · ") : "Все данные";
+  }
+
+  /* строка под названием бланка: мероприятие, по которому он построен
+     (выбранное или первое подходящее — см. doc.eventOf), и период
+     «Диапазон событий», если задан */
+  function eventLine(d, p) {
+    var parts = [];
+    var e = d.eventOf ? d.eventOf(p) : null;
+    if (e) parts.push(ruDate(e.date) + " · " + e.title + " · " + e.hall);
+    if (p.eventFrom || p.eventTo) {
+      parts.push("Диапазон событий" + (p.eventFrom ? " с " + ruDate(p.eventFrom) : "") +
+        (p.eventTo ? " по " + ruDate(p.eventTo) : ""));
+    }
+    return parts.join(" · ");
+  }
+
+  /* o = { no, title, params, cols } — cols: видимые столбцы спеки */
+  function model(spec, o) {
+    var p = o.params || {};
+    var m = { no: o.no, title: o.title, cols: o.cols, org: ORG, params: p };
+    if (spec.doc) {
+      var d = spec.doc;
+      var rows = spec.rows(p);
+      var inv  = d.invites ? d.invites(p) : null;
+      /* пригласительные всегда входят в «Всего:» и в свод; флажок решает
+         только, показывать ли их отдельной строкой */
+      var all  = inv ? rows.concat([inv]) : rows;
+      m.kind = "doc";
+      m.doc = d;
+      m.eventLine = eventLine(d, p);
+      m.rows = rows;
+      m.invites = p.invites ? inv : null;
+      m.totals  = d.totals  ? d.totals(all, p)  : null;
+      m.summary = d.summary ? d.summary(all, p) : null;
+    } else {
+      m.kind = "table";
+      m.rows = spec.rows(p);
+      m.paramsLine = paramsLine(spec, p);
+      /* «Итого» — суммы int/money, кроме total:false (цены); доли %
+         и сальдо считает сама спека в total(rows) */
+      var totals = {};
+      o.cols.forEach(function (c) {
+        if ((c.type === "int" || c.type === "money") && c.total !== false) {
+          totals[c.id] = m.rows.reduce(function (a, r) { return a + (r[c.id] || 0); }, 0);
+        }
+      });
+      if (spec.total) {
+        var extra = spec.total(m.rows) || {};
+        o.cols.forEach(function (c) { if (c.id in extra) totals[c.id] = extra[c.id]; });
+      }
+      m.totals = totals;
+    }
+    m.empty = !m.rows.length;
+    return m;
+  }
+
   window.AdminReportDoc = {
     org: ORG,
+    defaults: defaults,
+    paramsLine: paramsLine,
+    model: model,
+    csv: csv,
+    fileName: fileName,
 
-    render: function (host, model) {
-      host.innerHTML = '<div class="rdoc">' + docHtml(model, false) + "</div>";
+    /* экран: бланк — в .rdoc, таблица — в .table-wrap */
+    render: function (host, m) {
+      host.innerHTML = m.kind === "doc"
+        ? '<div class="rdoc">' + docHtml(m, false) + "</div>"
+        : '<div class="table-wrap">' + tableHtml(m, false) + "</div>";
     },
 
-    download: function (model, kind) {
+    download: function (m, kind) {
       var xl = kind === "excel";
-      save(model.doc.code + "_" + stamp() + (xl ? ".xls" : ".doc"),
+      save(fileName(m.no, xl ? "xls" : "doc"),
            xl ? "application/vnd.ms-excel" : "application/msword",
-           fileHtml(model, kind));
+           fileHtml(m, kind));
+    },
+
+    downloadCsv: function (m) {
+      save(fileName(m.no, "csv"), "text/csv", csv(m));
+    },
+
+    /* Сборка вне страницы отчёта (каталог «↓ Выгрузить»): та же модель,
+       что на экране, с теми же значениями формы по умолчанию; params
+       перекрывают их. Все столбцы — как в меню по умолчанию (on).
+       Отчёта или спеки нет → null. html — разметка, как на экране. */
+    build: function (no, params) {
+      var rep  = window.AdminReports && window.AdminReports.find(no);
+      var spec = window.AdminReportSpecs && window.AdminReportSpecs.get(no);
+      if (!rep || !spec) return null;
+      var title = spec.title || rep.name;
+      var p = Object.assign(defaults(spec), params || {});
+      var cols = (spec.columns || []).filter(function (c) { return c.on !== false; });
+      var m = model(spec, { no: no, title: title, params: p, cols: cols });
+      return {
+        title: title,
+        html: m.kind === "doc" ? docHtml(m, false) : tableFileHtml(m, false),
+        csv: csv(m),
+        empty: m.empty,
+        model: m,
+      };
     },
   };
 })();

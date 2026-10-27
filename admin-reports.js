@@ -335,8 +335,19 @@
     var rep = CATALOG.filter(function (r) { return r.no === no; })[0];
     var label = rep ? "«" + rep.name + "»" : "Отчёт " + no;
     if (kind === "open") { location.href = "report.html?no=" + encodeURIComponent(no); return; }
-    if (kind === "export") toast("Выгрузка: " + label);
-    if (kind === "setup")  toast("Настройки: " + label);
+    if (kind === "setup") {
+      location.href = "report.html?no=" + encodeURIComponent(no) + "&setup=1";
+      return;
+    }
+    if (kind === "export") {
+      /* выгрузка без перехода: та же модель, что на странице отчёта,
+         с параметрами формы по умолчанию (admin-report-doc.js) */
+      var out = window.AdminReportDoc ? window.AdminReportDoc.build(no, {}) : null;
+      if (!out) { toast("Параметры отчёта № " + no + " ещё не заведены: " + label); return; }
+      if (out.empty) { toast("Отчёт № " + no + ": нет данных для выгрузки"); return; }
+      window.AdminReportDoc.download(out.model, "excel");
+      toast("Отчёт № " + no + " выгружен");
+    }
   });
 
   var searchEl = $("#repSearch");

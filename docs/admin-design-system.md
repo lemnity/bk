@@ -73,6 +73,17 @@
 `.table-wrap` скроллится по X; `.dtable` — заголовок капсом `.7rem`, hover строки `--bg`; `.num` — число справа.
 Отчёты добавляют `.rv-table` (итоговая строка `tfoot`).
 
+### Выгрузки и печать отчёта
+```html
+<div class="rdoc-actions">
+  <button class="btn rdoc-word">Открыть в Word</button> <button class="btn rdoc-excel">Открыть в Excel</button>
+  <button class="btn btn-plain">Скачать CSV</button> <button class="btn btn-plain">Печать / PDF</button>
+</div>
+```
+Все выгрузки берут показанную модель (`AdminReportDoc.model`), не форму. «Печать / PDF» — `window.print()`;
+`@media print` в конце `admin.css` скрывает `.side`, `.top`, `.crumbs`, `.rdoc-actions`, `.toast` и всё
+с классом `.rv-noprint` (панель параметров), документ — на всю ширину.
+
 ### Бейджи и теги
 ```html
 <span class="badge income">Доход</span> <span class="badge expense">Расход</span>
