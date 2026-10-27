@@ -54,7 +54,34 @@
 
   function optionsOf(f) {
     var o = typeof f.options === "function" ? f.options() : (f.options || []);
-    return o.map(function (v) { return "<option>" + esc(v) + "</option>"; }).join("");
+    /* вариант — строка (значение = подпись) или { value, label }:
+       у мероприятия в параметр уходит id, а на экране — название */
+    return o.map(function (v) {
+      if (v && typeof v === "object") {
+        return '<option value="' + esc(v.value) + '">' + esc(v.label) + "</option>";
+      }
+      return "<option>" + esc(v) + "</option>";
+    }).join("");
+  }
+
+  /* значения формы → параметры rows(params). Ключ — id поля,
+     у daterange — keys: [от, до] (или id_from / id_to) */
+  function params() {
+    var p = {};
+    fields.forEach(function (f) {
+      if (!f.id) return;
+      if (f.kind === "group" && f.control === "daterange") {
+        var keys = f.keys || [f.id + "_from", f.id + "_to"];
+        var a = $("#f_" + f.id + "_from"), b = $("#f_" + f.id + "_to");
+        p[keys[0]] = a ? a.value : "";
+        p[keys[1]] = b ? b.value : "";
+        return;
+      }
+      var el = $("#f_" + f.id);
+      if (!el) return;
+      p[f.id] = f.kind === "check" ? el.checked : el.value;
+    });
+    return p;
   }
 
   function fieldHtml(f) {
@@ -110,7 +137,10 @@
     (hasMid ? '<div class="rv-col rv-col-mid">' +
       fields.filter(function (f) { return f.kind === "or"; })
             .map(function (f) { return '<div class="rv-row">' + fieldHtml(f) + "</div>"; }).join("") +
-      "</div>" : "") +
+      "</div>" : (fields.some(function (f) { return (f.col || "left") === "right"; })
+      /* сетка формы — три колонки «левая | или | правая»: без пустой
+         средней правая колонка встаёт во вторую (auto) и сжимает левую */
+      ? '<div class="rv-col rv-col-mid" aria-hidden="true"></div>' : "")) +
     colHtml("right");
 
   /* ---- столбцы ---- */
@@ -184,13 +214,23 @@
       $("#repResult").innerHTML = '<p class="rep-empty">Не выбрано ни одного столбца.</p>';
       return;
     }
-    var rows = spec.rows();
+    var rows = spec.rows(params());
+    if (!rows.length) {
+      $("#repResult").innerHTML = '<p class="rep-empty">Нет данных за выбранный период.</p>';
+      return;
+    }
+    /* «Итого» — суммы int/money, кроме total:false (цены); доли %
+       и сальдо считает сама спека в total(rows) */
     var totals = {};
     cols.forEach(function (c) {
-      if (c.type === "int" || c.type === "money") {
+      if ((c.type === "int" || c.type === "money") && c.total !== false) {
         totals[c.id] = rows.reduce(function (a, r) { return a + (r[c.id] || 0); }, 0);
       }
     });
+    if (spec.total) {
+      var extra = spec.total(rows) || {};
+      cols.forEach(function (c) { if (c.id in extra) totals[c.id] = extra[c.id]; });
+    }
 
     $("#repResult").innerHTML =
       '<div class="table-wrap"><table class="dtable rv-table"><thead><tr>' +
@@ -200,8 +240,9 @@
       "</tr></thead><tbody>" +
       rows.map(function (r) {
         return "<tr>" + cols.map(function (c) {
+          var v = r[c.id];
           return '<td class="' + (c.type === "text" ? "" : "num") + '">' +
-            esc(cell(r[c.id], c.type)) + "</td>";
+            (v === undefined || v === null ? "" : esc(cell(v, c.type))) + "</td>";
         }).join("") + "</tr>";
       }).join("") +
       '</tbody><tfoot><tr>' +
@@ -246,7 +287,7 @@
 
   function docModel() {
     var d = spec.doc;
-    var rows = spec.rows();
+    var rows = spec.rows(params());
     var inv  = d.invites ? d.invites() : null;
     /* пригласительные всегда входят в «Всего:» и в свод; флажок решает
        только, показывать ли их отдельной строкой */
