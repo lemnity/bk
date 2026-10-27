@@ -895,7 +895,17 @@
       if (!el.dataset || !el.dataset.f || !el.dataset.scope) return;
       if (el.type === "range" || el.type === "color") { draw(); return; }
       apply(el.dataset.scope, el.dataset.f, el.value);
+      /* Текст уже на холсте (input → livePaint), а панель от него не
+         зависит. Полная перерисовка здесь срабатывала бы на blur — и
+         съедала клик по «Ж»/«Переменной» и фокус при Shift+Tab к панели. */
+      if (el.tagName === "TEXTAREA") { livePaint(); onChange(get(), "field"); return; }
       commit("field");
+    });
+
+    /* Кнопки панели форматирования не забирают фокус у поля: выделение
+       остаётся на месте, и ничто не перерисовывается под указателем. */
+    host.addEventListener("mousedown", function (e) {
+      if (e.target.closest && e.target.closest(".lt-fmt button")) e.preventDefault();
     });
 
     /* ---- режим HTML ---- */
@@ -1244,21 +1254,26 @@
       onChange(get(), "download-html");
     }
 
+    /* Копируем то же, что уходит в файл и в отправку, — toHtml(L), а не
+       текст поля: в режиме HTML к нему добавляется строка отписки. */
     function copyCode(btnEl) {
-      var ta = host.querySelector(".lt-code textarea");
-      if (!ta) return;
-      var ro = ta.hasAttribute("readonly");
-      var done = function (ok) { btnEl.textContent = ok ? "Скопировано" : "Не удалось"; 
+      var text = toHtml(L);
+      var done = function (ok) { btnEl.textContent = ok ? "Скопировано" : "Не удалось";
         setTimeout(function () { btnEl.textContent = "Скопировать"; }, 1800); };
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(ta.value).then(function () { done(true); }, function () { done(false); });
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
         return;
       }
-      ta.removeAttribute("readonly");
-      ta.select();
+      var tmp = document.createElement("textarea");
+      tmp.value = text;
+      tmp.setAttribute("readonly", "");
+      tmp.style.position = "fixed"; tmp.style.left = "-9999px";
+      document.body.appendChild(tmp);
+      tmp.select();
       var ok = false;
       try { ok = document.execCommand("copy"); } catch (_) { ok = false; }
-      if (ro) ta.setAttribute("readonly", "");
+      tmp.remove();
+      btnEl.focus();
       done(ok);
     }
 

@@ -50,7 +50,7 @@ def code(page):
 try:
     with sync_playwright() as p:
         br = p.chromium.launch()
-        page = br.new_page()
+        page = br.new_context(accept_downloads=True).new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: m.type == "error" and "fonts.g" not in m.text and errors.append(m.text))
@@ -112,6 +112,36 @@ try:
             try { const h = AdminLetter.toHtml(m.letter); return h.length > 0 && h.includes('</html>') ? 'ok' : 'empty ' + m.id; }
             catch (e) { return 'err ' + m.id + ': ' + e.message; } })""")
         check(len(res) > 0 and all(r == "ok" for r in res), "письма S.MAILINGS: %s" % res)
+
+        # ---- UI настоящей клавиатурой, без синтетического change ----
+        add_block(page, "text")
+        page.click(TA)
+        page.evaluate("s => { const t = document.querySelector(s); t.setSelectionRange(0, t.value.length); }", TA)
+        page.keyboard.type("Привет мир")
+        select_range(page, TA, 7, 10)
+        page.click('.lt-fmt button[aria-label="Жирный"]')
+        check(page.input_value(TA) == "Привет **мир**", "клавиатура: «Ж» после набора: %r" % page.input_value(TA))
+        check(page.evaluate("document.activeElement.matches(%r)" % TA), "клавиатура: фокус остался в поле после «Ж»")
+        page.evaluate("s => { const t = document.querySelector(s); t.setSelectionRange(t.value.length, t.value.length); }", TA)
+        page.keyboard.type(", ")
+        page.click(".lt-pane .lt-var-btn")
+        check(page.get_attribute(".lt-pane .lt-var-btn", "aria-expanded") == "true", "клавиатура: меню переменных открылось после набора")
+        page.click('.lt-pane .lt-var-menu [data-var="name"]')
+        check(page.input_value(TA) == "Привет **мир**, {{name}}", "клавиатура: переменная после набора: %r" % page.input_value(TA))
+        check("{{name}}" in page.inner_text(".lt-canvas"), "клавиатура: холст обновился")
+        page.focus(TA)
+        page.keyboard.type("!")
+        page.keyboard.press("Shift+Tab")
+        check(page.evaluate("!!(document.activeElement && document.activeElement.closest('.lt-fmt'))"),
+              "Shift+Tab из поля — фокус на панели форматирования, а не на <body>")
+        page.keyboard.press("Enter")   # «Переменная» с клавиатуры
+        check(page.evaluate("!!document.activeElement.closest('.lt-var-menu')"), "Enter открывает меню, фокус в нём")
+        page.keyboard.press("Escape")
+        check(page.evaluate("document.activeElement.classList.contains('lt-var-btn')"), "Esc закрывает меню, фокус на кнопке")
+        check(page.input_value(TA) == "Привет **мир**, {{name}}!", "текст сохранился: %r" % page.input_value(TA))
+        page.click(".lt-canvas .lt-b >> nth=0")
+        page.click('.lt-b.is-sel [data-kill="1"]')
+        check(page.locator(".lt-canvas .lt-b").count() == 0, "служебный блок удалён")
 
         # ---- UI: выделить слово -> «Ж» ----
         add_block(page, "text")
@@ -202,6 +232,18 @@ try:
         check(page.locator(".lt-lint-i.is-warn", has_text="Неизвестная").count() == 1, "{{fio}} -> warn в списке")
         check(page.evaluate("AdminLetter.toHtml({mode:'html', html: document.querySelector('.lt-src').value, blocks:[]})")
               .count("Отписаться") == 1, "html-режим: без дубля строки отписки")
+
+        # «Скопировать» = «Скачать .html» = toHtml (со строкой отписки)
+        page.fill(".lt-src", "<html><body><table><tr><td>Копия</td></tr></table></body></html>")
+        page.evaluate("() => { navigator.clipboard.writeText = t => { window.__copied = t; return Promise.resolve(); }; }")
+        page.click(".lt-copy")
+        page.wait_for_function("window.__copied !== undefined")
+        copied = page.evaluate("window.__copied")
+        with page.expect_download() as d:
+            page.click(".lt-dl-html")
+        saved = open(d.value.path(), encoding="utf-8").read()
+        check(copied == saved, "«Скопировать» и «Скачать .html» дают один HTML")
+        check(UNSUB in copied and "Копия" in copied, "в скопированном есть строка отписки")
 
         # Esc, затем Shift+Tab — выход из редактора
         page.focus(".lt-src")
