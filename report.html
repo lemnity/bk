@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="admin.css?v=15" />
+<link rel="stylesheet" href="admin.css?v=21" />
 </head>
 <body class="admin" data-page="reports">
 
@@ -55,7 +55,7 @@
   </nav>
 
   <div id="repBody">
-    <section class="panel pad">
+    <section class="panel pad rv-noprint">
       <!-- параметры -->
       <div class="rv-form" id="repForm"></div>
 
@@ -81,12 +81,16 @@
       <div class="panel-head">
         <h2>Результат</h2>
       </div>
+      <!-- применённые параметры: период, мероприятие, канал… -->
+      <p class="panel-note" id="repParams"></p>
       <div id="repResult"></div>
 
-      <!-- выгрузка бланка: та же разметка, что на экране -->
+      <!-- выгрузки: та же модель и разметка, что на экране -->
       <div class="rdoc-actions" id="repDocActions" hidden>
         <button class="btn rdoc-word"  id="repWord"  type="button">Открыть в Word</button>
         <button class="btn rdoc-excel" id="repExcel" type="button">Открыть в Excel</button>
+        <button class="btn btn-plain"  id="repCsv"   type="button">Скачать CSV</button>
+        <button class="btn btn-plain"  id="repPrint" type="button">Печать / PDF</button>
       </div>
     </section>
   </div>
@@ -94,11 +98,14 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script src="admin-dialog.js?v=1"></script>
 <script src="admin-nav.js?v=6"></script>
 <script src="admin-store.js?v=8"></script>
-<script src="admin-reports.js?v=3"></script>
-<script src="admin-report-specs.js?v=4"></script>
-<script src="admin-report-doc.js?v=1"></script>
-<script src="admin-report-view.js?v=4"></script>
+<script src="admin-report-data.js?v=1"></script>
+<script src="admin-report-kinds.js?v=2"></script>
+<script src="admin-reports.js?v=5"></script>
+<script src="admin-report-specs.js?v=6"></script>
+<script src="admin-report-doc.js?v=2"></script>
+<script src="admin-report-view.js?v=8"></script>
 </body>
 </html>

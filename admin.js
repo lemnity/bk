@@ -724,10 +724,9 @@
     toast("Расход добавлен в книгу операций");
   });
 
-  // build report — открывает образец PDF-отчёта (книга операций)
+  // build report — живой отчёт «Книга операций (бухгалтерия)» из S.LEDGER
   on("#buildReport", "click", () => {
-    toast("Открываю отчёт (образец PDF)…");
-    window.open(ROUTE_BASE + "docs/otchet-buhgalteriya-shablon.pdf", "_blank");
+    location.href = ROUTE_BASE + "report.html?no=" + encodeURIComponent("Б-1");
   });
 
   /* ---- halls: palette select ---- */

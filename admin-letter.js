@@ -14,7 +14,14 @@
    подписчику: стили кабинета не должны подкрашивать письмо и
    создавать ложное впечатление, что вёрстка в порядке.
 
-   Наружу: window.AdminLetter.create(opts) и .toHtml(letter).
+   Письмо можно перевести в режим HTML (letter.mode = "html"): тогда
+   оно уходит тем кодом, что написан во вкладке «HTML письма» (плюс
+   строка отписки перед </body>, если в коде нет {{unsubscribe_url}}),
+   а блоки лежат рядом нетронутыми до «Вернуться к блокам».
+
+   Наружу: window.AdminLetter.create(opts) и .toHtml(letter),
+   .lintHtml(html) — замечания к HTML письма, .richText(s) — мини-
+   разметка текста, .renderVars(html, sample) — подстановка {{…}}.
    ============================================================ */
 (function () {
   "use strict";
@@ -33,6 +40,117 @@
   };
 
   function fontCss(id) { return (FONTS[id] || FONTS.modern).css; }
+
+  /* ------------------------------------------------------------
+     Мини-разметка текста
+     ------------------------------------------------------------
+     **жирный**, _курсив_, [текст](https://…), строки с «- » — список.
+     Сначала экранируем ВСЁ, потом размечаем: так в письмо не попадёт
+     ни один тег, кроме наших. Ссылки — только http(s), mailto и
+     переменная {{…}}; javascript: и прочее остаётся текстом.
+     Текст без разметки даёт ровно прежний рендер (экранирование и
+     <br /> вместо переводов строк) — старые письма не меняются. */
+  var LINK_STYLE = "color:inherit;text-decoration:underline";
+  var UL_STYLE = "margin:0;padding:0 0 0 22px";
+  var LI_STYLE = "margin:0 0 4px";
+  var WORD = "0-9A-Za-zА-Яа-яЁё";
+
+  function safeHref(u) {
+    return /^(https?:\/\/|mailto:)\S+$/i.test(u) || /^\{\{\s*\w+\s*\}\}$/.test(u);
+  }
+
+  /* Ссылка кнопки/картинки: тот же список схем, что у мини-разметки.
+     Небезопасная (javascript:, data: …) рендерится как пустая. */
+  function blockHref(b) {
+    var u = String(b.href || "").trim();
+    return u && safeHref(u) ? u : "";
+  }
+
+  /* Предупреждение в свойствах блока со ссылкой ("" — всё в порядке) */
+  function hrefWarn(t, href) {
+    var u = String(href || "").trim();
+    if (u && !safeHref(u)) return "Небезопасная ссылка — разрешены http(s) и mailto";
+    if (!u && t === "button") return "Добавьте ссылку — без неё кнопка не кликается";
+    return "";
+  }
+
+  function inlineMarks(s) {
+    /* ссылки и {{…}} прячем, чтобы «_» в адресе или в {{event_title}}
+       не превратились в курсив */
+    var keep = [];
+    function hold(html) { keep.push(html); return "\u0000" + (keep.length - 1) + "\u0000"; }
+    s = s.replace(/\[([^\]\n]+)\]\(([^()\s]+)\)/g, function (m, text, url) {
+      if (!safeHref(url)) return m;
+      return hold('<a href="' + url + '" style="' + LINK_STYLE + '">' + emph(text) + "</a>");
+    });
+    s = s.replace(/\{\{[^{}\n]*\}\}/g, hold);
+    s = emph(s);
+    return s.replace(/\u0000(\d+)\u0000/g, function (_, i) { return keep[Number(i)]; });
+  }
+
+  function emph(s) {
+    s = s.replace(/\*\*(?=\S)([^*\n]*?\S)\*\*/g, "<strong>$1</strong>");
+    return s.replace(new RegExp("(^|[^" + WORD + "])_(?=\\S)([^_\\n]*?\\S)_(?![" + WORD + "])", "g"),
+      "$1<em>$2</em>");
+  }
+
+  function richText(s) {
+    var lines = esc(s).split("\n");
+    var out = [], text = [], items = [];
+    function flushText() { if (text.length) { out.push(text.join("<br />")); text = []; } }
+    function flushList() {
+      if (!items.length) return;
+      out.push('<ul style="' + UL_STYLE + '">' + items.map(function (it) {
+        return '<li style="' + LI_STYLE + '">' + it + "</li>";
+      }).join("") + "</ul>");
+      items = [];
+    }
+    lines.forEach(function (line) {
+      if (/^- /.test(line)) { flushText(); items.push(inlineMarks(line.slice(2))); }
+      else { flushList(); text.push(inlineMarks(line)); }
+    });
+    flushText(); flushList();
+    return out.join("");
+  }
+
+  /* ------------------------------------------------------------
+     Переменные
+     ------------------------------------------------------------
+     В письме лежат плейсхолдеры {{…}}; подставляет их отправка.
+     Здесь подстановка нужна только предпросмотру — демо-значениями. */
+  var VARS = [
+    { k: "name",            label: "Имя получателя" },
+    { k: "email",           label: "Email" },
+    { k: "event_title",     label: "Мероприятие" },
+    { k: "unsubscribe_url", label: "Ссылка отписки" },
+  ];
+  var VAR_KEYS = VARS.map(function (v) { return v.k; });
+
+  function demoVars() {
+    var S = window.AdminStore && window.AdminStore.state;
+    var ev = S && S.EVENTS && S.EVENTS[0];
+    return {
+      name: "Анна",
+      email: "anna@example.ru",
+      event_title: ev ? ev.title : "",
+      unsubscribe_url: "https://tvorchestvo.ru/unsubscribe?u=demo",
+    };
+  }
+
+  function renderVars(html, sample) {
+    var v = sample || demoVars();
+    return String(html == null ? "" : html).replace(/\{\{\s*(\w+)\s*\}\}/g, function (m, k) {
+      return Object.prototype.hasOwnProperty.call(v, k) ? esc(v[k]) : m;
+    });
+  }
+
+  /* Строка отписки: без неё рассылку легко принять за спам, а адрес
+     подставит отправка. Добавляется, только если автор не поставил
+     {{unsubscribe_url}} сам. */
+  var UNSUB_TEXT = 'Вы получили это письмо, потому что подписаны на рассылку. ' +
+    '<a href="{{unsubscribe_url}}">Отписаться</a>';
+  var UNSUB_STYLE = "padding:12px 24px 20px;font-size:12px;line-height:1.5;color:#596A82;text-align:center";
+  var HAS_UNSUB = /\{\{\s*unsubscribe_url\s*\}\}/;
 
   /* Ширина письма — 600px: исторический предел, за которым Outlook и
      почтовые приложения начинают резать вёрстку по горизонтали. */
@@ -71,7 +189,7 @@
       label: "Заголовок", icon: "H",
       make: function () { return { t: "heading", text: "Заголовок письма", size: 28, align: "center", color: "", pad: 14 }; },
       fields: [
-        { k: "text",  kind: "textarea", label: "Текст" },
+        { k: "text",  kind: "textarea", label: "Текст", rich: true },
         { k: "size",  kind: "range", label: "Размер", min: 14, max: 44, unit: "px" },
         { k: "align", kind: "align", label: "Выравнивание" },
         { k: "color", kind: "color", label: "Цвет текста", empty: "как у письма" },
@@ -80,7 +198,7 @@
       html: function (b, st) {
         return '<div style="padding:' + pad(b) + ";text-align:" + b.align +
           ";font-size:" + b.size + "px;line-height:1.25;font-weight:600;color:" +
-          (b.color || st.ink) + '">' + esc(b.text).replace(/\n/g, "<br />") + "</div>";
+          (b.color || st.ink) + '">' + richText(b.text) + "</div>";
       },
     },
 
@@ -88,7 +206,7 @@
       label: "Текст", icon: "≡",
       make: function () { return { t: "text", text: "Здесь — текст письма. Расскажите, что происходит в театре.", size: 15, align: "left", color: "", pad: 10 }; },
       fields: [
-        { k: "text",  kind: "textarea", label: "Текст", rows: 7 },
+        { k: "text",  kind: "textarea", label: "Текст", rows: 7, rich: true },
         { k: "size",  kind: "range", label: "Размер", min: 11, max: 24, unit: "px" },
         { k: "align", kind: "align", label: "Выравнивание" },
         { k: "color", kind: "color", label: "Цвет текста", empty: "как у письма" },
@@ -97,7 +215,7 @@
       html: function (b, st) {
         return '<div style="padding:' + pad(b) + ";text-align:" + b.align +
           ";font-size:" + b.size + "px;line-height:1.6;color:" + (b.color || st.ink) + '">' +
-          esc(b.text).replace(/\n/g, "<br />") + "</div>";
+          richText(b.text) + "</div>";
       },
     },
 
@@ -114,11 +232,16 @@
         { k: "pad",    kind: "range", label: "Отступы", min: 0, max: 48, unit: "px" },
       ],
       html: function (b) {
-        /* ссылкой, а не <button>: кнопки в письмах не работают */
-        return '<div style="padding:' + pad(b) + ";text-align:" + b.align + '">' +
-          '<a href="' + esc(b.href || "#") + '" style="display:inline-block;padding:12px 26px;' +
+        /* ссылкой, а не <button>: кнопки в письмах не работают. Без адреса —
+           <span> того же вида: href="#" в письме ведёт в никуда. Небезопасная
+           ссылка (не http(s)/mailto/{{…}}) — тоже <span> */
+        var look = 'style="display:inline-block;padding:12px 26px;' +
           "background:" + b.bg + ";color:" + b.color + ";border-radius:" + b.radius +
-          'px;font-size:15px;font-weight:600;text-decoration:none">' + esc(b.text) + "</a></div>";
+          'px;font-size:15px;font-weight:600;text-decoration:none">' + esc(b.text);
+        var href = blockHref(b);
+        return '<div style="padding:' + pad(b) + ";text-align:" + b.align + '">' +
+          (href ? '<a href="' + esc(href) + '" ' + look + "</a>" : "<span " + look + "</span>") +
+          "</div>";
       },
     },
 
@@ -141,7 +264,7 @@
           : '<div style="padding:28px;background:#E9EEF6;color:#596A82;font-size:13px">' +
             "Картинка не выбрана</div>";
         return '<div style="padding:' + pad(b) + ";text-align:" + b.align + '">' +
-          (b.href ? '<a href="' + esc(b.href) + '" style="text-decoration:none">' + img + "</a>" : img) +
+          (blockHref(b) ? '<a href="' + esc(blockHref(b)) + '" style="text-decoration:none">' + img + "</a>" : img) +
           "</div>";
       },
     },
@@ -250,7 +373,21 @@
      HTML письма
      ------------------------------------------------------------ */
   function toHtml(L) {
+    /* письмо в режиме HTML уходит ровно тем кодом, что написал человек */
+    if (L && L.mode === "html") {
+      var src = String(L.html || "");
+      if (HAS_UNSUB.test(src)) return src;
+      /* перед последним </body>; без </body> вставить некуда — код
+         уходит как написан (линтер про незакрытый документ напомнит) */
+      var at = src.search(/<\/body\s*>(?![\s\S]*<\/body\s*>)/i);
+      if (at < 0) return src;
+      return src.slice(0, at) + '<div style="' + UNSUB_STYLE + '">' + UNSUB_TEXT + "</div>" + src.slice(at);
+    }
     var st = L.style;
+    var body = L.blocks.length ? L.blocks.map(function (b) { return blockHtml(b, st); }).join("")
+                               : '<div style="padding:48px 24px;text-align:center;color:#596A82">Письмо пустое</div>';
+    var unsub = HAS_UNSUB.test(body) ? ""
+      : '<tr><td style="' + UNSUB_STYLE + '">' + UNSUB_TEXT + "</td></tr>";
     var frame = st.border ? "border:1px solid " + st.border + ";" : "";
     return '<!DOCTYPE html>\n<html lang="ru"><head><meta charset="utf-8" />' +
       '<meta name="viewport" content="width=device-width, initial-scale=1" />' +
@@ -263,9 +400,102 @@
       'style="width:' + PAGE_W + "px;max-width:100%;background:" + st.canvas + ";" + frame +
       "border-radius:" + st.radius + "px;font-family:" + fontCss(st.font) +
       ";color:" + st.ink + '"><tr><td style="padding:16px 0">' +
-      (L.blocks.length ? L.blocks.map(function (b) { return blockHtml(b, st); }).join("")
-                       : '<div style="padding:48px 24px;text-align:center;color:#596A82">Письмо пустое</div>') +
-      "</td></tr></table></td></tr></table></body></html>";
+      body + "</td></tr>" + unsub + "</table></td></tr></table></body></html>";
+  }
+
+  /* ------------------------------------------------------------
+     Проверка HTML письма
+     ------------------------------------------------------------
+     Правила — данными: каждое смотрит на исходник и говорит, есть ли
+     проблема. Новое правило — ещё одна запись в LINT_RULES. Это не
+     валидатор HTML, а напоминание о том, что ломается в почтовиках. */
+  var GMAIL_CLIP = 102 * 1024; /* больше — Gmail прячет хвост под «Показать полностью» */
+
+  function tableTooWide(html) {
+    var re = /<table\b[^>]*>/gi, m;
+    while ((m = re.exec(html))) {
+      var tag = m[0];
+      var a = /\bwidth\s*=\s*["']?\s*(\d+)/i.exec(tag);
+      var s = /style\s*=\s*["'][^"']*\bwidth\s*:\s*(\d+)px/i.exec(tag);
+      if ((a && Number(a[1]) > PAGE_W) || (s && Number(s[1]) > PAGE_W)) return true;
+    }
+    return false;
+  }
+
+  var LINT_RULES = [
+    { level: "warn", text: "Нет табличного каркаса — Outlook может разъехаться",
+      test: function (h) { return !/<table\b/i.test(h); } },
+    { level: "error", text: "В письме есть <script> — почтовики вырезают скрипты, а часть писем с ними отправляет в спам",
+      test: function (h) { return /<script\b/i.test(h); } },
+    { level: "warn", text: "Внешние стили (<link rel=\"stylesheet\">, @import) почтовики не подгружают — задавайте стили прямо в тегах",
+      test: function (h) {
+        return /<link\b[^>]*rel\s*=\s*["']?stylesheet/i.test(h) || /@import\b/i.test(h);
+      } },
+    { level: "warn", text: "Пустая ссылка (href=\"#\" или без адреса) — укажите, куда она ведёт",
+      test: function (h) {
+        return /\bhref\s*=\s*(["'])\s*#?\s*\1/i.test(h) ||  /* href="#", href="" */
+          /\bhref\s*=\s*(?:#(?=[\s>\/])|(?=>))/i.test(h) ||  /* href=# без кавычек */
+          /<a\b[^>]*\shref(?=[\s>]|\/>)(?!\s*=)/i.test(h);     /* <a href> без значения */
+      } },
+    { level: "warn", text: "Картинки data-URL не показываются в Gmail/Outlook",
+      test: function (h) {
+        return /\b(?:src|background)\s*=\s*["']?\s*data:/i.test(h) || /url\(\s*["']?\s*data:/i.test(h);
+      } },
+    { level: "warn", text: "Неизвестная переменная в {{…}} — она уйдёт подписчику как есть. " +
+        "Доступны: " + VAR_KEYS.map(function (k) { return "{{" + k + "}}"; }).join(", "),
+      test: function (h) {
+        var re = /\{\{\s*([^{}]*?)\s*\}\}/g, m;
+        while ((m = re.exec(h))) if (VAR_KEYS.indexOf(m[1]) < 0) return true;
+        return false;
+      } },
+    { level: "warn", text: "Таблица шире " + PAGE_W + "px — в Outlook и на телефоне письмо поедет вбок",
+      test: tableTooWide },
+    { level: "warn", text: "Нет </body> или </html> — документ письма не закрыт",
+      test: function (h) { return !/<\/body\s*>/i.test(h) || !/<\/html\s*>/i.test(h); } },
+  ];
+
+  function lintHtml(html) {
+    var h = String(html || "");
+    return LINT_RULES.filter(function (r) { return r.test(h); })
+      .map(function (r) { return { level: r.level, text: r.text }; });
+  }
+
+  function byteSize(s) {
+    return new Blob([String(s || "")]).size;
+  }
+
+  /* ------------------------------------------------------------
+     Журнал тестовых отправок: letter.tests = [{to:[…], at:ISO}]
+     ------------------------------------------------------------ */
+  var TEST_MAX = 5, TEST_KEEP = 20;
+  var MAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+  function pluralRu(n, f) {
+    var a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return f[2];
+    if (b > 1 && b < 5) return f[1];
+    return b === 1 ? f[0] : f[2];
+  }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function ruStamp(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return String(iso || "");
+    return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + "." + d.getFullYear() +
+      " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  function parseTo(raw) {
+    var seen = {}, out = [];
+    String(raw || "").split(/[,;\n]+/).forEach(function (x) {
+      x = x.trim();
+      if (x && !seen[x.toLowerCase()]) { seen[x.toLowerCase()] = 1; out.push(x); }
+    });
+    return out;
+  }
+  /* «Последний тест: 27.10.2026 14:05, a@x.ru, b@x.ru» или "" */
+  function lastTest(letter) {
+    var t = letter && Array.isArray(letter.tests) && letter.tests.length ? letter.tests[letter.tests.length - 1] : null;
+    if (!t || !Array.isArray(t.to)) return "";
+    return "Последний тест: " + ruStamp(t.at) + ", " + t.to.join(", ");
   }
 
   /* ------------------------------------------------------------
@@ -276,19 +506,30 @@
     var onChange = opts.onChange || function () {};
     var L = normalize(opts.value);
 
-    var mode = "edit";       /* edit | preview | code */
+    var mode = L.mode === "html" ? "code" : "edit";  /* edit | preview | code */
     var width = "desktop";   /* desktop | phone */
     var tab = "style";       /* style | props */
     var sel = null;          /* путь к выбранному блоку, массив */
     var adder = null;        /* где открыта палитра: {path, slot, index} */
     var sideOpen = true;
+    var liveTimer = null;    /* отложенное обновление предпросмотра HTML */
+    var tabOut = false;      /* после Esc клавиша Tab уводит фокус из редактора */
 
+    /* Незнакомые поля письма сохраняем как есть: их добавляют другие
+       части кабинета, и конструктор не должен их терять. */
     function normalize(v) {
-      var d = { style: { bg: "#F2F5F9", canvas: "#FFFFFF", border: "", radius: 0, font: "modern", ink: "#132437" }, blocks: [] };
+      var d = { style: { bg: "#F2F5F9", canvas: "#FFFFFF", border: "", radius: 0, font: "modern", ink: "#132437" },
+                blocks: [], mode: "blocks", html: "" };
       if (!v || typeof v !== "object") return d;
-      return { style: Object.assign({}, d.style, v.style || {}),
-               blocks: Array.isArray(v.blocks) ? JSON.parse(JSON.stringify(v.blocks)) : [] };
+      var out = JSON.parse(JSON.stringify(v));
+      out.style = Object.assign({}, d.style, v.style || {});
+      out.blocks = Array.isArray(v.blocks) ? out.blocks : [];
+      out.mode = v.mode === "html" ? "html" : "blocks";
+      out.html = typeof v.html === "string" ? v.html : "";
+      return out;
     }
+
+    function isHtml() { return L.mode === "html"; }
 
     /* ---- адресация ----
        Путь — массив вида [3] или [3,"c0",1]: индекс, слот, индекс.
@@ -380,6 +621,27 @@
     }
 
     /* ---- панель ---- */
+
+    /* Панель форматирования над полем. target — id поля, в которое
+       вставляем; full=false — только «Переменная» (редактор HTML). */
+    function fmtBarHtml(target, full) {
+      var b = function (fmt, icon, label) {
+        return '<button type="button" data-fmt="' + fmt + '" data-for="' + target + '" aria-label="' +
+          label + '" title="' + label + '">' + icon + "</button>";
+      };
+      return '<div class="lt-fmt" role="toolbar" aria-label="Форматирование">' +
+        (full ? b("b", "<b>Ж</b>", "Жирный") + b("i", "<i>К</i>", "Курсив") +
+                b("link", "Ссылка", "Ссылка") + b("list", "Список", "Список") : "") +
+        '<span class="lt-var">' +
+          '<button type="button" class="lt-var-btn" data-varmenu="' + target + '" aria-label="Переменная" ' +
+            'aria-haspopup="true" aria-expanded="false">{{ }} Переменная</button>' +
+          '<span class="lt-var-menu" role="menu" hidden>' + VARS.map(function (v) {
+            return '<button type="button" role="menuitem" data-var="' + v.k + '" data-for="' + target + '">' +
+              "<code>{{" + v.k + "}}</code> " + esc(v.label) + "</button>";
+          }).join("") + "</span>" +
+        "</span></div>";
+    }
+
     function fieldHtml(f, val, scope) {
       var id = "lf_" + scope + "_" + f.k;
       var head = '<label class="lt-f"><span class="lt-f-l">' + esc(f.label) + "</span>";
@@ -387,6 +649,13 @@
       var attr = 'id="' + id + '" data-f="' + esc(f.k) + '" data-scope="' + scope + '"';
 
       if (f.kind === "textarea") {
+        if (f.rich) {
+          /* панель — вне <label>: иначе клик по кнопке уводил бы фокус в поле */
+          return '<div class="lt-f"><label class="lt-f-l" for="' + id + '">' + esc(f.label) + "</label>" +
+            fmtBarHtml(id, true) +
+            "<textarea " + attr + ' rows="' + (f.rows || 4) + '">' + esc(val) + "</textarea>" +
+            '<span class="lt-f-h">**жирный**, _курсив_, [текст](https://…), строка с «- » — пункт списка.</span></div>';
+        }
         return head + "<textarea " + attr + ' rows="' + (f.rows || 4) + '"' +
           (f.mono ? ' class="lt-mono" spellcheck="false"' : "") + ">" + esc(val) + "</textarea>" + tail;
       }
@@ -458,27 +727,90 @@
       }
       var T = TYPES[b.t];
       return '<p class="lt-group">' + esc(T.label) + "</p>" +
+        (b.t === "button" || b.t === "image" ? hrefWarnHtml(b) : "") +
         T.fields.map(function (f) {
           var v = f.k === "count" ? String(b.cols.length) : b[f.k];
           return fieldHtml(f, v, "block");
         }).join("");
     }
 
+    function hrefWarnHtml(b) {
+      var w = hrefWarn(b.t, b.href);
+      return '<p class="lt-warn" role="status"' + (w ? "" : " hidden") + ">" + esc(w) + "</p>";
+    }
+
+    /* Предпросмотр — всегда в песочнице без allow-scripts: HTML письма
+       может прийти откуда угодно, и в кабинете он исполняться не должен. */
+    function frameHtml(cls, w, prop) {
+      return '<iframe class="' + cls + '" sandbox="" title="Предпросмотр письма" style="' + (prop || "width") +
+        ":" + w + 'px" srcdoc="' + esc(renderVars(toHtml(L))) + '"></iframe>';
+    }
+
+    function codeBarHtml() {
+      return '<div class="lt-code-bar">' +
+        (isHtml()
+          ? '<button type="button" class="btn btn-plain lt-to-blocks">Вернуться к блокам</button>' +
+            '<span class="lt-size"></span>'
+          : '<button type="button" class="btn btn-plain lt-to-html">Редактировать как HTML</button>') +
+        '<span class="lt-code-sp"></span>' +
+        '<button type="button" class="btn btn-plain lt-dl-html">Скачать .html</button>' +
+        '<button type="button" class="btn btn-plain lt-copy">Скопировать</button>' +
+        "</div>";
+    }
+
+    function codeHtml() {
+      if (!isHtml()) {
+        return '<div class="lt-code">' + codeBarHtml() +
+          '<textarea readonly spellcheck="false" aria-label="HTML письма">' + esc(toHtml(L)) + "</textarea></div>";
+      }
+      return '<div class="lt-code lt-code-html">' + codeBarHtml() +
+        '<div class="lt-split">' +
+          '<div class="lt-src-wrap">' + fmtBarHtml("ltSrc", false) +
+            '<textarea class="lt-src" id="ltSrc" spellcheck="false" autocomplete="off" autocapitalize="off" ' +
+              'aria-label="HTML-код письма" aria-describedby="ltSrcHint">' + esc(L.html) + "</textarea>" +
+            '<p class="lt-f-h" id="ltSrcHint">Tab — отступ в 2 пробела, Shift+Tab — снять отступ. ' +
+              "Чтобы уйти из редактора клавиатурой: Esc, затем Tab.</p>" +
+          "</div>" +
+          frameHtml("lt-frame lt-live", width === "phone" ? PHONE_W : PAGE_W + 48, "max-width") +
+        "</div>" +
+        '<ul class="lt-lint" aria-live="polite"></ul>' +
+        "</div>";
+    }
+
     function draw() {
+      /* поле с фокусом отпускаем ДО замены разметки: его blur/change
+         иначе сработает посреди innerHTML и перерисует виджет вложенно */
+      var ae = document.activeElement;
+      if (ae && ae !== document.body && host.contains(ae) && ae.blur) ae.blur();
+      if (isHtml() && mode === "edit") mode = "code";
       var stage = mode === "edit"
         ? '<div class="lt-page"><div class="lt-canvas" style="' + stageStyle() + '">' +
           canvasHtml() + "</div></div>"
         : mode === "preview"
-          ? '<iframe class="lt-frame" title="Предпросмотр письма" style="width:' +
-            (width === "phone" ? PHONE_W : PAGE_W + 48) + 'px" srcdoc="' + esc(toHtml(L)) + '"></iframe>'
-          : '<div class="lt-code"><button type="button" class="btn btn-plain lt-copy">Скопировать</button>' +
-            "<textarea readonly spellcheck=\"false\">" + esc(toHtml(L)) + "</textarea></div>";
+          ? frameHtml("lt-frame", width === "phone" ? PHONE_W : PAGE_W + 48)
+          : codeHtml();
+
+      var side = isHtml()
+        ? '<div class="lt-tabs">' +
+            '<button type="button" disabled>Стиль</button><button type="button" disabled>Свойства</button>' +
+          "</div>" +
+          '<div class="lt-pane"><p class="lt-empty">Письмо в режиме HTML: оформление и содержимое ' +
+            "задаются в коде. Блоки, стиль и свойства вернутся по кнопке «Вернуться к блокам» " +
+            "во вкладке «HTML письма».</p></div>"
+        : '<div class="lt-tabs">' +
+            '<button type="button" data-tab="style"' + (tab === "style" ? ' class="is-on"' : "") + ">Стиль</button>" +
+            '<button type="button" data-tab="props"' + (tab === "props" ? ' class="is-on"' : "") + ">Свойства</button>" +
+          "</div>" +
+          '<div class="lt-pane">' + paneHtml() + "</div>";
 
       host.innerHTML =
         '<div class="lt' + (sideOpen ? "" : " lt-narrow") + '">' +
           '<div class="lt-bar">' +
             '<div class="lt-modes">' +
-              btn("mode", "edit", "✎", "Редактор", mode === "edit") +
+              (isHtml()
+                ? '<button type="button" disabled title="Редактор блоков недоступен в режиме HTML">' +
+                  '<span class="vh">Редактор блоков недоступен в режиме HTML</span>✎</button>'
+                : btn("mode", "edit", "✎", "Редактор", mode === "edit")) +
               btn("mode", "preview", "◉", "Предпросмотр", mode === "preview") +
               btn("mode", "code", "<>", "HTML письма", mode === "code") +
             "</div>" +
@@ -494,16 +826,100 @@
           "</div>" +
           '<div class="lt-body">' +
             '<div class="lt-stage" data-mode="' + mode + '">' + stage + "</div>" +
-            '<aside class="lt-side">' +
-              '<div class="lt-tabs">' +
-                '<button type="button" data-tab="style"' + (tab === "style" ? ' class="is-on"' : "") + ">Стиль</button>" +
-                '<button type="button" data-tab="props"' + (tab === "props" ? ' class="is-on"' : "") + ">Свойства</button>" +
-              "</div>" +
-              '<div class="lt-pane">' + paneHtml() + "</div>" +
-            "</aside>" +
+            '<aside class="lt-side">' + side + "</aside>" +
+          "</div>" +
+          '<div class="lt-test">' +
+            '<button type="button" class="btn btn-plain lt-test-btn" aria-describedby="ltTestNote">Тестовая отправка</button>' +
+            '<span class="lt-test-note" id="ltTestNote"></span>' +
           "</div>" +
           '<input type="file" class="lt-file" accept="application/json,.json" hidden />' +
         "</div>";
+      paintTest();
+      if (isHtml() && mode === "code") paintLive(false);
+    }
+
+    /* ---- тестовая отправка ----
+       Почтового сервера нет: «отправка» — запись в журнал L.tests
+       (последние 20), который уходит в стор вместе с письмом. */
+    function paintTest() {
+      var btnEl = host.querySelector(".lt-test-btn");
+      var note = host.querySelector(".lt-test-note");
+      if (!btnEl || !note) return;
+      var empty = L.mode === "html" ? !L.html.trim() : !L.blocks.length;
+      btnEl.disabled = empty;
+      if (empty) { btnEl.title = "Сначала составьте письмо"; }
+      else btnEl.removeAttribute("title");
+      note.textContent = empty
+        ? "Письмо пустое — добавьте содержимое, тогда можно отправить тест."
+        : lastTest(L);
+    }
+
+    function testDialog() {
+      if (!window.AdminDialog) return;
+      var last = Array.isArray(L.tests) && L.tests.length ? L.tests[L.tests.length - 1] : null;
+      var found = null;
+      window.AdminDialog.open({
+        title: "Тестовая отправка",
+        body: '<div class="lt-f">' +
+          '<label class="lt-f-l" for="ltTestTo">Адреса (от 1 до ' + TEST_MAX + ')</label>' +
+          '<textarea id="ltTestTo" rows="3" spellcheck="false" autocomplete="off" aria-describedby="ltTestHint ltTestErr">' +
+            esc(last && Array.isArray(last.to) ? last.to.join(", ") : "") + "</textarea>" +
+          '<span class="lt-f-h" id="ltTestHint">Через запятую или с новой строки.</span>' +
+          '<p class="lt-test-err" id="ltTestErr" role="alert" hidden></p></div>' +
+          '<p class="lt-f-h">Реальной отправки нет: кабинет работает без почтового сервера — письмо попадёт в журнал тестов.</p>',
+        actions: [
+          { label: "Отмена", kind: "plain", value: false },
+          { label: "Отправить тест", kind: "primary", value: "send", validate: function (root) {
+              var ta = root.querySelector("#ltTestTo"), er = root.querySelector("#ltTestErr");
+              var list = parseTo(ta.value), msg = "";
+              var bad = list.filter(function (x) { return !MAIL_RE.test(x); });
+              if (!list.length) msg = "Укажите хотя бы один адрес.";
+              else if (bad.length) msg = "Не похоже на адрес: " + bad.slice(0, 3).join(", ") +
+                (bad.length > 3 ? " и ещё " + (bad.length - 3) : "") + ".";
+              else if (list.length > TEST_MAX) msg = "Не больше " + TEST_MAX + " адресов за раз, сейчас " + list.length + ".";
+              er.textContent = msg; er.hidden = !msg;
+              if (msg) { ta.setAttribute("aria-invalid", "true"); ta.focus(); return false; }
+              ta.removeAttribute("aria-invalid");
+              found = list;
+              return true;
+            } }
+        ],
+      }).then(function (v) {
+        if (v !== "send" || !found) return;
+        L.tests = (Array.isArray(L.tests) ? L.tests : []).concat([{ to: found, at: new Date().toISOString() }]).slice(-TEST_KEEP);
+        onChange(get(), "test");
+        onChange(get(), "msg:Тест отправлен на " + found.length + " " + pluralRu(found.length, ["адрес", "адреса", "адресов"]));
+        paintTest();
+        var b2 = host.querySelector(".lt-test-btn"); if (b2) b2.focus();
+      });
+    }
+
+    /* Размер, замечания и (по желанию) живой предпросмотр — без полной
+       перерисовки, чтобы не сбивать курсор в редакторе. */
+    function paintLive(withFrame) {
+      paintTest();
+      var size = host.querySelector(".lt-size");
+      if (size) {
+        var bytes = byteSize(L.html);
+        var big = bytes > GMAIL_CLIP;
+        size.className = "lt-size" + (big ? " is-warn" : "");
+        size.textContent = (bytes / 1024).toFixed(1).replace(".", ",") + " КБ" +
+          (big ? " — больше 102 КБ, Gmail обрежет письмо" : "");
+      }
+      var list = host.querySelector(".lt-lint");
+      if (list) {
+        var notes = lintHtml(L.html);
+        var next = notes.length
+          ? notes.map(function (n) {
+              return '<li class="lt-lint-i is-' + n.level + '"><b>' +
+                (n.level === "error" ? "Ошибка" : "Внимание") + "</b> " + esc(n.text) + "</li>";
+            }).join("")
+          : '<li class="lt-lint-i is-ok">Замечаний нет</li>';
+        /* список озвучивается (aria-live) — трогаем, только если он изменился */
+        if (list.getAttribute("data-k") !== next) { list.setAttribute("data-k", next); list.innerHTML = next; }
+      }
+      var frame = withFrame && host.querySelector(".lt-live");
+      if (frame) frame.setAttribute("srcdoc", renderVars(toHtml(L)));
     }
 
     function btn(kind, val, icon, title, on) {
@@ -514,6 +930,7 @@
     /* ---- события ---- */
     host.addEventListener("click", function (e) {
       var t = e.target.closest("button");
+      if (!t || !t.closest(".lt-var")) closeVarMenus();
 
       /* выбор блока — по клику мимо кнопок */
       if (!t) {
@@ -529,7 +946,11 @@
       if (t.dataset.act === "side") { sideOpen = !sideOpen; draw(); return; }
       if (t.dataset.act === "down") { download(); return; }
       if (t.dataset.act === "up")   { host.querySelector(".lt-file").click(); return; }
+      if (t.classList.contains("lt-test-btn")) { testDialog(); return; }
       if (t.classList.contains("lt-copy")) { copyCode(t); return; }
+      if (t.classList.contains("lt-dl-html")) { downloadHtml(); return; }
+      if (t.classList.contains("lt-to-html")) { toHtmlMode(); return; }
+      if (t.classList.contains("lt-to-blocks")) { toBlocksMode(); return; }
 
       if (t.dataset.add) {
         var key = t.dataset.add;
@@ -537,6 +958,10 @@
         draw();
         return;
       }
+
+      if (t.dataset.varmenu) { toggleVarMenu(t); return; }
+      if (t.dataset.var) { closeVarMenus(); insertAt(t.dataset.for, "{{" + t.dataset.var + "}}", null); return; }
+      if (t.dataset.fmt) { closeVarMenus(); format(t.dataset.for, t.dataset.fmt); return; }
 
       if (t.dataset.make) { addBlock(t.dataset.make); return; }
       if (t.dataset.clear) { clearField(t); return; }
@@ -554,6 +979,7 @@
 
     host.addEventListener("input", function (e) {
       var el = e.target;
+      if (el.classList && el.classList.contains("lt-src")) { srcInput(el); return; }
       if (!el.dataset || !el.dataset.f || !el.dataset.scope) return;
 
       /* ползунок и цвет отдают значение на каждый шаг — их показываем
@@ -561,6 +987,15 @@
          захват мыши */
       var v = el.type === "range" ? Number(el.value) : el.value;
       apply(el.dataset.scope, el.dataset.f, v);
+      if (el.dataset.f === "href") {
+        var warn = host.querySelector(".lt-warn");
+        var hb = blockAt(sel);
+        if (warn && hb) {
+          var w = hrefWarn(hb.t, v);
+          if (warn.textContent !== w) warn.textContent = w;
+          warn.hidden = !w;
+        }
+      }
 
       if (el.type === "range") {
         var out = el.parentNode.querySelector(".lt-range-v");
@@ -578,8 +1013,157 @@
       if (!el.dataset || !el.dataset.f || !el.dataset.scope) return;
       if (el.type === "range" || el.type === "color") { draw(); return; }
       apply(el.dataset.scope, el.dataset.f, el.value);
+      /* Текст уже на холсте (input → livePaint), а панель от него не
+         зависит. Полная перерисовка здесь срабатывала бы на blur — и
+         съедала клик по «Ж»/«Переменной» и фокус при Shift+Tab к панели. */
+      if (el.tagName === "TEXTAREA") { livePaint(); onChange(get(), "field"); return; }
       commit("field");
     });
+
+    /* Кнопки панели форматирования не забирают фокус у поля: выделение
+       остаётся на месте, и ничто не перерисовывается под указателем. */
+    host.addEventListener("mousedown", function (e) {
+      if (e.target.closest && e.target.closest(".lt-fmt button")) e.preventDefault();
+    });
+
+    /* ---- режим HTML ---- */
+    function srcInput(el) {
+      L.html = el.value;
+      onChange(get(), "html");
+      paintLive(false);
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(function () { paintLive(true); }, 300);
+    }
+
+    /* Tab в редакторе кода — отступ, а не уход фокуса. Чтобы клавиатура
+       не застревала, Esc «отпускает» следующий Tab. */
+    host.addEventListener("keydown", function (e) {
+      var ta = e.target;
+      if (e.key === "Escape" && ta.closest && ta.closest(".lt-var")) {
+        var vb = ta.closest(".lt-var").querySelector(".lt-var-btn");
+        closeVarMenus(); vb.focus(); return;
+      }
+      if (!ta.classList || !ta.classList.contains("lt-src")) return;
+      /* Shift/Ctrl/Alt/Meta сами по себе не сбрасывают «отпускание»:
+         иначе после Esc не сработал бы Shift+Tab */
+      if (/^(Shift|Control|Alt|Meta)$/.test(e.key)) return;
+      if (e.key === "Escape") { tabOut = true; return; }
+      if (e.key !== "Tab") { tabOut = false; return; }
+      if (tabOut) { tabOut = false; return; }
+      e.preventDefault();
+      var v = ta.value, a = ta.selectionStart, b = ta.selectionEnd;
+      if (!e.shiftKey) {
+        ta.value = v.slice(0, a) + "  " + v.slice(b);
+        ta.selectionStart = ta.selectionEnd = a + 2;
+      } else {
+        var ls = v.lastIndexOf("\n", a - 1) + 1;
+        var cut = /^ {1,2}/.exec(v.slice(ls));
+        if (!cut) return;
+        var n = cut[0].length;
+        ta.value = v.slice(0, ls) + v.slice(ls + n);
+        ta.selectionStart = Math.max(ls, a - n);
+        ta.selectionEnd = Math.max(ls, b - n);
+      }
+      srcInput(ta);
+    });
+
+    /* ---- переменные и форматирование ---- */
+    function closeVarMenus() {
+      host.querySelectorAll(".lt-var-menu").forEach(function (m) { m.hidden = true; });
+      host.querySelectorAll(".lt-var-btn").forEach(function (b) { b.setAttribute("aria-expanded", "false"); });
+    }
+
+    function toggleVarMenu(b) {
+      var menu = b.parentNode.querySelector(".lt-var-menu");
+      var open = menu.hidden;
+      closeVarMenus();
+      menu.hidden = !open;
+      b.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) menu.querySelector("button").focus();
+    }
+
+    /* Вставка в поле на место выделения. sel — что выделить после
+       вставки: [от, до] относительно начала вставки; null — курсор в конец. */
+    function insertAt(id, text, selAfter, from, to) {
+      var ta = document.getElementById(id);
+      if (!ta) return;
+      var v = ta.value;
+      var a = from != null ? from : ta.selectionStart;
+      var b = to != null ? to : ta.selectionEnd;
+      ta.value = v.slice(0, a) + text + v.slice(b);
+      ta.focus();
+      ta.selectionStart = a + (selAfter ? selAfter[0] : text.length);
+      ta.selectionEnd = a + (selAfter ? selAfter[1] : text.length);
+      fieldChanged(ta);
+    }
+
+    function fieldChanged(ta) {
+      if (ta.classList.contains("lt-src")) { srcInput(ta); return; }
+      apply(ta.dataset.scope, ta.dataset.f, ta.value);
+      livePaint();
+      onChange(get(), "field");
+    }
+
+    function format(id, fmt) {
+      var ta = document.getElementById(id);
+      if (!ta) return;
+      var v = ta.value, a = ta.selectionStart, b = ta.selectionEnd;
+      var picked = v.slice(a, b);
+      if (fmt === "b" || fmt === "i") {
+        var m = fmt === "b" ? "**" : "_";
+        var word = picked || (fmt === "b" ? "жирный" : "курсив");
+        insertAt(id, m + word + m, [m.length, m.length + word.length]);
+        return;
+      }
+      if (fmt === "link") {
+        var txt = picked || "текст ссылки";
+        var link = "[" + txt + "](https://)";
+        /* курсор — после «https://», чтобы сразу дописать адрес */
+        insertAt(id, link, [link.length - 1, link.length - 1]);
+        return;
+      }
+      if (fmt === "list") {
+        var ls = v.lastIndexOf("\n", a - 1) + 1;
+        var le = v.indexOf("\n", Math.max(a, b - 1));
+        if (le < 0) le = v.length;
+        var block = v.slice(ls, le).split("\n").map(function (line) {
+          return /^- /.test(line) ? line : "- " + line;
+        }).join("\n");
+        insertAt(id, block, [0, block.length], ls, le);
+      }
+    }
+
+    function toHtmlMode() {
+      window.AdminDialog.confirm({
+        title: "Редактировать как HTML?",
+        text: "Письмо превратится в HTML-код. Блоки можно будет вернуть, но правки кода тогда пропадут.",
+        ok: "Редактировать как HTML",
+      }).then(function (yes) {
+        if (!yes) return;
+        /* блоки остаются в письме нетронутыми — к ним можно вернуться */
+        L.html = toHtml(L);
+        L.mode = "html";
+        sel = null; adder = null; tab = "style";
+        mode = "code";
+        commit("mode");
+      });
+    }
+
+    function toBlocksMode() {
+      window.AdminDialog.confirm({
+        title: "Вернуться к блокам?",
+        text: "Письмо снова соберётся из блоков, а правки HTML-кода пропадут.",
+        ok: "Вернуться к блокам",
+        danger: true,
+      }).then(function (yes) {
+        if (!yes) return;
+        clearTimeout(liveTimer);
+        L.mode = "blocks";
+        L.html = "";
+        mode = "edit";
+        commit("mode");
+      });
+    }
 
     function findField(scope, k) {
       if (scope === "style") return STYLE_FIELDS.filter(function (f) { return f.k === k; })[0];
@@ -757,32 +1341,57 @@
         var parsed;
         try { parsed = JSON.parse(String(fr.result)); } catch (_) { parsed = null; }
         /* чужой json не должен превращать письмо в пустой холст молча */
-        if (!parsed || !Array.isArray(parsed.blocks)) {
+        var ok = parsed && (Array.isArray(parsed.blocks) ||
+          (parsed.mode === "html" && typeof parsed.html === "string"));
+        if (!ok) {
           onChange(get(), "upload-bad");
           return;
         }
         L = normalize(parsed);
         sel = null;
         tab = "style";
+        mode = isHtml() ? "code" : "edit";
         commit("upload");
       };
       fr.readAsText(file);
     }
 
+    /* Файл письма: тот же HTML, что во вкладке «HTML письма». */
+    function downloadHtml() {
+      var id = typeof opts.id === "function" ? opts.id() : opts.id;
+      var name = "pismo-" + (id != null && id !== "" ? String(id).replace(/[^\w.-]+/g, "_") : "shablon") + ".html";
+      var blob = new Blob([toHtml(L)], { type: "text/html;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      onChange(get(), "download-html");
+    }
+
+    /* Копируем то же, что уходит в файл и в отправку, — toHtml(L), а не
+       текст поля: в режиме HTML к нему добавляется строка отписки. */
     function copyCode(btnEl) {
-      var ta = host.querySelector(".lt-code textarea");
-      if (!ta) return;
-      var done = function (ok) { btnEl.textContent = ok ? "Скопировано" : "Не удалось"; 
+      var text = toHtml(L);
+      var done = function (ok) { btnEl.textContent = ok ? "Скопировано" : "Не удалось";
         setTimeout(function () { btnEl.textContent = "Скопировать"; }, 1800); };
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(ta.value).then(function () { done(true); }, function () { done(false); });
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
         return;
       }
-      ta.removeAttribute("readonly");
-      ta.select();
+      var tmp = document.createElement("textarea");
+      tmp.value = text;
+      tmp.setAttribute("readonly", "");
+      tmp.style.position = "fixed"; tmp.style.left = "-9999px";
+      document.body.appendChild(tmp);
+      tmp.select();
       var ok = false;
       try { ok = document.execCommand("copy"); } catch (_) { ok = false; }
-      ta.setAttribute("readonly", "");
+      tmp.remove();
+      btnEl.focus();
       done(ok);
     }
 
@@ -793,14 +1402,24 @@
     return {
       get: get,
       html: function () { return toHtml(L); },
-      isEmpty: function () { return !L.blocks.length; },
-      set: function (v) { L = normalize(v); sel = null; tab = "style"; draw(); },
+      isEmpty: function () { return isHtml() ? !L.html.trim() : !L.blocks.length; },
+      set: function (v) {
+        L = normalize(v); sel = null; tab = "style";
+        if (isHtml()) mode = "code";
+        draw();
+      },
     };
   }
 
   window.AdminLetter = {
     create: create,
     toHtml: toHtml,
+    lintHtml: lintHtml,
+    LINT_RULES: LINT_RULES,
+    richText: richText,
+    renderVars: renderVars,
+    lastTest: lastTest,
+    VARS: VARS,
     TYPES: TYPES,
     PALETTE: PALETTE,
     FONTS: FONTS,

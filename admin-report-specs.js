@@ -19,44 +19,32 @@
      columns[]— столбцы результата: { id, label, type, on }
                 type: "text" | "int" | "money" | "pct"
                 on:false — столбец есть, но по умолчанию снят
-     rows()   — данные демо-таблицы (детерминированные)
+     rows(params) — данные таблицы (детерминированные); params —
+                значения формы по ключам полей (у daterange — keys)
+     total(rows)  — необязательно: значения строки «Итого» для
+                столбцов, которые не суммируются (доли %, сальдо)
+     columns[].total:false — столбец не суммируется в «Итого»
      doc      — бланк документа (admin-report-doc.js): шапка,
                 строки итогов, свод, код отчёта. Нет doc →
                 результат покажется обычной таблицей.
        code       — код отчёта в подвале бланка («PPr2»)
        caption    — подзаголовок под наименованием театра
        ticketSet  — номер билетного комплекта
-       invites()  — строка «Всего пригласительных:»
-       totals(rows)  — строка «Всего:» (проценты не суммируются,
+       eventOf(params) — мероприятие бланка {id,title,date,hall} | null
+       invites(params) — строка «Всего пригласительных:»
+       totals(rows, params)  — строка «Всего:» (проценты не суммируются,
                        считаются отдельно, поэтому это функция)
-       summary(rows) — свод «Аншлаг / Реализовано»
+       summary(rows, params) — свод «Аншлаг / Реализовано»
 
-   Отчёта нет в этой таблице → страница покажет универсальную форму
-   и честно скажет, что параметры ещё не заведены. Молча
-   подставлять чужие столбцы нельзя: отчёты не взаимозаменяемы.
+   Отчёта нет в этой таблице → спеку строит admin-report-kinds.js
+   по виду отчёта (по мероприятиям, по датам, по каналам…). Только
+   если номер не найден и там, страница покажет универсальную форму
+   и честно скажет, что параметры ещё не заведены.
    ============================================================ */
 (function () {
   "use strict";
 
-  /* детерминированный ПСЧ: цифры не должны прыгать при каждом
-     открытии страницы, иначе демо выглядит сломанным */
-  function seeded(seed) {
-    var s = seed;
-    return function () {
-      s = (s * 1103515245 + 12345) & 0x7fffffff;
-      return s / 0x7fffffff;
-    };
-  }
-
-  var SELLERS = [
-    "Касса театра",
-    "Сайт театра",
-    "Агрегатор «Кассир.ру»",
-    "Агрегатор «Афиша»",
-    "Распространители",
-    "Пушкинская карта",
-    "Кассы-партнёры",
-  ];
+  function D() { return window.AdminReportData; }
 
   var SHOWS = [
     "Все",
@@ -68,29 +56,72 @@
     "Щелкунчик",
   ];
 
-  /* Аншлаг — зал целиком, по зонам из admin-store.js:
+  /* Аншлаг — зал целиком, по зонам S.TIERS (сейчас в admin-store.js:
        партер    166 × 3500 =   581 000
        амфитеатр 300 × 2200 =   660 000
        балкон    120 × 1200 =   144 000
        ложа       24 × 5000 =   120 000
-                  610          1 505 000
-     Средняя цена по залу — 2467 ₽; цены продавцов ходят вокруг неё,
-     иначе «реализовано» перевалит за аншлаг и в своде выйдет 104 %. */
-  var HOUSE     = 610;
-  var HOUSE_SUM = 1505000;
+                  610          1 505 000).
+     Считаем из хранилища: правка зон в «Ценах» меняет и свод. */
+  function house() {
+    var S = window.AdminStore && window.AdminStore.state;
+    var seats = 0, sum = 0;
+    ((S && S.TIERS) || []).forEach(function (t) {
+      seats += +t.seats || 0;
+      sum += (+t.seats || 0) * (+t.price || 0);
+    });
+    return { seats: seats, sum: sum };
+  }
 
-  /* Доли продавцов в проданных местах (в сумме 1) и сколько мест
-     ушло всего. Держим ниже аншлага, иначе проценты в своде
-     выходят за 100 и бланк выглядит сломанным. */
-  var SHARE      = [0.28, 0.22, 0.14, 0.11, 0.12, 0.08, 0.05];
-  var SOLD_TOTAL = 556;   /* 91 % аншлага */
-  var INVITES    = 24;    /* пригласительные бесплатные → суммы нулевые */
+  function ruDate(iso) {
+    var p = String(iso || "").split("-");
+    return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : String(iso || "");
+  }
+
+  /* Мероприятие бланка. Выбрано в списке — оно. Не выбрано — первое
+     из афиши, подходящее под «Диапазон событий» и «Выберите
+     мероприятие» (так и диапазон, и название реально фильтруют).
+     Ничего не подошло → null, страница покажет пустое состояние. */
+  function pickEvent(p) {
+    p = p || {};
+    var list = D().events();
+    if (p.event) {
+      return list.filter(function (e) { return e.id === p.event; })[0] || null;
+    }
+    return list.filter(function (e) {
+      if (p.eventFrom && e.date < p.eventFrom) return false;
+      if (p.eventTo && e.date > p.eventTo) return false;
+      if (p.show && p.show !== "Все" && e.title !== p.show) return false;
+      return true;
+    })[0] || null;
+  }
+
+  /* продажи и возвраты выбранного мероприятия: бронь и приглашения
+     денег не несут (у приглашений служебная «оплата» Сертификат) */
+  function eventOps(p, kinds) {
+    var e = pickEvent(p);
+    return e ? D().ops({ eventId: e.id, kind: kinds || ["sale", "refund"] }) : [];
+  }
+
+  /* «Продавец» бланка — канал продажи журнала. Уполномоченный
+     подписывается своим именем, без служебной приставки. */
+  function sellerName(ch) {
+    if (ch === "Касса") return "Касса театра";
+    if (ch === "Интернет") return "Сайт театра";
+    return ch.replace(/^Уполномоченный:\s*/, "");
+  }
+  /* вознаграждение продавца, % от баланса продажи: своя касса — без
+     вознаграждения, сайт — эквайринг и билетная система, уполномоченные —
+     агентское. Ставки демонстрационные, требуют сверки с договорами. */
+  function feePct(ch) {
+    if (ch === "Касса") return 0;
+    if (ch === "Интернет") return 6;
+    return 12;
+  }
 
   function eventOptions() {
-    var S = window.AdminStore && window.AdminStore.state;
-    var ev = (S && Array.isArray(S.EVENTS)) ? S.EVENTS : [];
-    return ["Событие не выбрано"].concat(ev.map(function (e) {
-      return e.title + " · " + e.date + " · " + e.hall;
+    return [{ value: "", label: "Событие не выбрано" }].concat(D().events().map(function (e) {
+      return { value: e.id, label: e.title + " · " + e.date + " · " + e.hall };
     }));
   }
 
@@ -103,7 +134,8 @@
     fields: [
       { kind: "select", id: "event",  col: "left",  options: eventOptions },
       { kind: "or",                   col: "mid" },
-      { kind: "group",  id: "range",  col: "right", addon: "Диапазон событий", control: "daterange" },
+      { kind: "group",  id: "range",  col: "right", addon: "Диапазон событий", control: "daterange",
+        keys: ["eventFrom", "eventTo"] },
       { kind: "group",  id: "show",   col: "left",  addon: "Выберите мероприятие",
         control: "select", options: SHOWS },
       /* флажок управляет бланком: снят — пригласительные не пропадают,
@@ -129,27 +161,31 @@
       { id: "income",   label: "Доход",                  type: "money" },
       { id: "incomeFz", label: "Доход вкл. 193-ФЗ",      type: "money" },
     ],
-    rows: function () {
-      var rnd = seeded(20260608);
-      return SELLERS.map(function (name, i) {
-        var soldCnt = Math.round(SOLD_TOTAL * SHARE[i]);
-        /* средний чек продавца пляшет вокруг средней цены зала, а не
-           вокруг отдельного числа: иначе «реализовано» в своде легко
-           обгоняет аншлаг и процент уходит за 100 */
-        var avg     = Math.round(HOUSE_SUM / HOUSE * (0.85 + rnd() * 0.3));
-        var refCnt  = Math.floor(rnd() * Math.max(1, soldCnt * 0.05));
-        var soldSum = soldCnt * avg;
-        var refSum  = refCnt * avg;
+    /* Строки — продавцы (каналы продажи журнала AdminReportData) по
+       выбранному мероприятию: продано / возвращено / баланс считаются
+       из операций, а не задаются. Продаж и возвратов нет → []. */
+    rows: function (p) {
+      var ops = eventOps(p);
+      if (!ops.length) return [];
+      var g = D().groupBy(ops, function (o) { return o.channel; });
+      return D().channels().map(function (c) {
+        var list = g.get(c.value) || [];
+        var s = list.filter(function (o) { return o.kind === "sale"; });
+        var r = list.filter(function (o) { return o.kind === "refund"; });
+        var soldCnt = s.length;
+        var refCnt  = r.length;
+        var soldSum = D().sum(s, "amount");
+        var refSum  = 0 - D().sum(r, "amount") || 0; /* без «-0 ₽» */
         var balCnt  = soldCnt - refCnt;
         var balSum  = soldSum - refSum;
-        var pct     = [10, 0, 12, 12, 8, 0, 6][i % 7];
+        var pct     = feePct(c.value);
         var fee     = Math.round(balSum * pct / 100);
         /* формулы 193-ФЗ взяты из прежней версии спеки как есть и
            требуют сверки с рабочей системой: «вкл. 193-ФЗ» у
            вознаграждения прибавляет удержание, у дохода — вычитает */
         var fz193   = Math.round(balSum * 0.02);
         return {
-          seller: name,
+          seller: sellerName(c.value),
           soldCnt: soldCnt, soldSum: soldSum,
           balCnt: balCnt,   balSum: balSum,
           refCnt: refCnt,   refSum: refSum,
@@ -166,11 +202,15 @@
       code: "PPr2",
       caption: "Отчет о продаже билетов по мероприятию",
       ticketSet: 16,
-      invites: function () {
+      /* мероприятие, по которому построен бланк, — для строки шапки */
+      eventOf: pickEvent,
+      /* пригласительные того же мероприятия; бесплатные → суммы нулевые */
+      invites: function (p) {
+        var n = eventOps(p, "invite").length;
         return {
           seller: "Всего пригласительных:",
-          soldCnt: INVITES, soldSum: 0,
-          balCnt: INVITES,  balSum: 0,
+          soldCnt: n, soldSum: 0,
+          balCnt: n,  balSum: 0,
           refCnt: 0,        refSum: 0,
           fz193: 0, pct: 0, fee: 0, feeFz: 0, income: 0, incomeFz: 0,
         };
@@ -189,14 +229,14 @@
         var seats = rows.reduce(function (a, r) { return a + (r.balCnt || 0); }, 0);
         var money = rows.reduce(function (a, r) { return a + (r.balSum || 0); }, 0);
         var fz    = rows.reduce(function (a, r) { return a + (r.fz193  || 0); }, 0);
-        var full  = HOUSE_SUM;
+        var h     = house();
         return {
           head: ["", "Аншлаг", "Реализовано", "Реализовано вкл. 193-ФЗ", "%"],
           rows: [
             { label: "Кол-во мест", type: "int",
-              cells: [HOUSE, seats, seats, Math.round(seats / HOUSE * 100)] },
+              cells: [h.seats, seats, seats, h.seats ? Math.round(seats / h.seats * 100) : 0] },
             { label: "На сумму", type: "money",
-              cells: [full, money, money + fz, Math.round(money / full * 100)] },
+              cells: [h.sum, money, money + fz, h.sum ? Math.round(money / h.sum * 100) : 0] },
           ],
         };
       },
@@ -220,14 +260,11 @@
     fields: [
       { kind: "group", id: "event", col: "left", addon: "Выберите событие",
         control: "select", options: function () {
-          var S = window.AdminStore && window.AdminStore.state;
-          var ev = (S && Array.isArray(S.EVENTS)) ? S.EVENTS : [];
-          return ["Не выбрано"].concat(ev.map(function (e) {
-            return e.title + " · " + e.date + " · " + e.hall;
-          }));
+          return [{ value: "", label: "Не выбрано" }].concat(eventOptions().slice(1));
         } },
       { kind: "or",                  col: "mid" },
-      { kind: "group", id: "range",  col: "right", addon: "Диапазон событий", control: "daterange" },
+      { kind: "group", id: "range",  col: "right", addon: "Диапазон событий", control: "daterange",
+        keys: ["eventFrom", "eventTo"] },
       { kind: "group", id: "show",   col: "left",  addon: "Выберите мероприятие",
         control: "select", options: SHOWS },
       { kind: "check", id: "invites", col: "right", label: "Показывать пригласительные отдельно" },
@@ -242,22 +279,23 @@
       { id: "cashless", label: "Безналичный расчёт", type: "money" },
       { id: "total",    label: "Итого",              type: "money" },
     ],
-    rows: function () {
-      var rnd = seeded(30260608);
-      return SHOWS.slice(1).map(function (name) {
-        var sold  = 60 + Math.floor(rnd() * 420);
-        var avg   = 1200 + Math.floor(rnd() * 2400);
-        var total = sold * avg;
-        /* доли типов оплаты; последний тип добираем остатком,
-           иначе сумма частей не сойдётся с «Итого» из-за округлений */
-        var cash     = Math.round(total * (0.16 + rnd() * 0.12));
-        var card     = Math.round(total * (0.30 + rnd() * 0.14));
-        var sbp      = Math.round(total * (0.10 + rnd() * 0.10));
-        var pushkin  = Math.round(total * (0.05 + rnd() * 0.10));
-        var cashless = total - cash - card - sbp - pushkin;
-        return { show: name, sold: sold, cash: cash, card: card, sbp: sbp,
-                 pushkin: pushkin, cashless: cashless, total: total };
-      });
+    /* Строка — выбранное мероприятие (см. pickEvent), суммы — чистые
+       (продажи минус возвраты) по типам оплаты журнала. «Безналичный
+       расчёт» — оплата сертификатом: другого безнала в журнале нет;
+       соответствие типов столбцам требует сверки с рабочей системой. */
+    rows: function (p) {
+      var ops = eventOps(p);
+      if (!ops.length) return [];
+      var by = function (pay) {
+        return D().sum(ops.filter(function (o) { return o.pay === pay; }), "amount");
+      };
+      var sold = 0;
+      ops.forEach(function (o) { sold += o.kind === "sale" ? 1 : -1; });
+      var cash = by("Наличные"), card = by("Карта"), sbp = by("СБП"),
+          pushkin = by("Пушкинская карта"), cashless = by("Сертификат");
+      return [{ show: ops[0].eventTitle + " · " + ruDate(ops[0].eventDate), sold: sold,
+                cash: cash, card: card, sbp: sbp, pushkin: pushkin, cashless: cashless,
+                total: D().sum(ops, "amount") }];
     },
     /* Бланк тот же, что у № 3 — шапка, подписи, код. Строки
        «Всего пригласительных:» и свода «Аншлаг» здесь НЕТ: на снимке
@@ -267,6 +305,8 @@
       caption: "Отчет о продаже билетов по мероприятию " +
                "с разбивкой оплаты в кассе по типам",
       ticketSet: 16,
+      /* мероприятие, по которому построен бланк, — для строки шапки */
+      eventOf: pickEvent,
       totals: function (rows) {
         var t = { show: "Всего:" };
         ["sold", "cash", "card", "sbp", "pushkin", "cashless", "total"]
@@ -283,6 +323,11 @@
     "3": PPR2,
     "3а": PPR2_PAY,
 
-    get: function (no) { return Object.prototype.hasOwnProperty.call(this, no) ? this[no] : null; },
+    /* ручная спека («3», «3а» — бланк PPr2), иначе спека вида из
+       admin-report-kinds.js. Нет ни той, ни другой → null. */
+    get: function (no) {
+      if (no !== "get" && Object.prototype.hasOwnProperty.call(this, no)) return this[no];
+      return window.AdminReportKinds ? window.AdminReportKinds.specFor(no) : null;
+    },
   };
 })();

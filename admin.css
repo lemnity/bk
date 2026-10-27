@@ -925,6 +925,7 @@ a{color:inherit;text-decoration:none}
 /* раскрытая строка: письмо или получатели */
 .ml-detail>td{background:var(--bg);padding:18px 16px}
 .ml-detail-h{font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:12px}
+.ml-detail-t{margin:-6px 0 12px;font-size:.8rem;line-height:1.5;color:var(--ink-mute)}
 .ml-frame{width:100%;max-width:660px;height:420px;border:1px solid var(--line);border-radius:var(--r-sm);background:#fff}
 .ml-who{display:flex;flex-wrap:wrap;gap:8px}
 .ml-who-i{display:inline-flex;align-items:center;gap:8px;font-size:.78rem;color:var(--ink-2);
@@ -984,7 +985,33 @@ a{color:inherit;text-decoration:none}
 .lt-code textarea{width:100%;height:520px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   font-size:.76rem;line-height:1.55;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);
   border-radius:var(--r-sm);padding:14px;resize:vertical}
-.lt-copy{position:absolute;top:10px;right:12px;padding:6px 12px;font-size:.78rem}
+/* панель над кодом: переход между режимами, размер, скачать, скопировать */
+.lt-code-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+.lt-code-bar .btn{padding:6px 12px;font-size:.78rem}
+.lt-code-sp{flex:1 1 auto}
+.lt-size{font-size:.8rem;color:var(--ink-mute)}
+.lt-size.is-warn{color:var(--warn);font-weight:500}
+/* режим HTML: редактор и живой предпросмотр рядом, на узком — друг под другом */
+.lt-split{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.lt-src-wrap{flex:1 1 300px;min-width:0}
+.lt-code .lt-src{color:var(--ink);tab-size:2;white-space:pre;overflow:auto}
+.lt-src-wrap .lt-f-h{display:block;margin-top:6px}
+.lt-live{flex:1 1 340px;min-width:0;height:520px}
+.lt-lint{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.lt-lint-i{font-size:.8rem;line-height:1.5;padding:7px 10px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
+.lt-lint-i b{font-weight:600;margin-right:4px}
+.lt-lint-i.is-warn{border-color:var(--warn);color:var(--warn)}
+.lt-lint-i.is-error{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.lt-lint-i.is-ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-bg)}
+.lt-test{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface-2)}
+.lt-test .btn{padding:6px 12px;font-size:.78rem}
+.lt-test .btn:disabled{opacity:.55;cursor:not-allowed}
+.lt-test-note{font-size:.8rem;color:var(--ink-mute);line-height:1.5}
+.lt-test-err{margin:6px 0 0;font-size:.8rem;line-height:1.5;color:var(--bad)}
+.lt-f textarea[aria-invalid="true"]{border-color:var(--bad)}
+.lt-bar button:disabled,.lt-tabs button:disabled{opacity:.45;cursor:not-allowed}
+.lt-bar button:disabled:hover{background:none;color:var(--ink-2)}
 
 /* блок на холсте: обводка и микро-панель появляются по наведению */
 .lt-b{position:relative;outline:1px dashed transparent;outline-offset:-1px}
@@ -1039,6 +1066,19 @@ a{color:inherit;text-decoration:none}
 .lt-f textarea{resize:vertical;line-height:1.5}
 .lt-f textarea.lt-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.76rem}
 .lt-f input:focus,.lt-f select:focus,.lt-f textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+/* панель форматирования текста и меню переменных */
+.lt-fmt{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:0 0 6px}
+.lt-fmt button{min-width:30px;height:28px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-sm);
+  background:var(--surface);color:var(--ink-2);font-family:var(--font-ui);font-size:.76rem;cursor:pointer}
+.lt-fmt button:hover{background:var(--accent-tint);color:var(--accent)}
+.lt-fmt button[aria-expanded="true"]{background:var(--accent-tint);color:var(--accent);border-color:var(--accent)}
+.lt-var{position:relative;display:inline-block}
+.lt-var-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:5;display:grid;min-width:230px;padding:4px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-lg)}
+.lt-fmt .lt-var-menu button{height:auto;padding:7px 8px;border:none;text-align:left;font-size:.78rem;color:var(--ink)}
+.lt-var-menu code{font-size:.74rem;color:var(--accent)}
+.lt-warn{margin:0 0 14px;padding:8px 10px;font-size:.78rem;line-height:1.5;color:var(--warn);
+  border:1px solid var(--warn);border-radius:var(--r-sm);background:var(--surface)}
 /* загрузка картинки в блок «Картинка» */
 .lt-img{display:block}
 .lt-img-p{display:block;width:100%;max-height:130px;object-fit:contain;background:var(--surface-2);
@@ -1154,4 +1194,48 @@ a.day-t:hover{color:var(--accent);text-decoration:underline}
   .kpi:nth-child(2n){border-right:1px solid var(--line)}
   .top{align-items:flex-start;flex-direction:column}
   .period button,.ov-filter button{padding:8px 14px}
+}
+
+/* ============================================================ ДИАЛОГ (dlg-)
+   Общий модальный примитив: window.AdminDialog (admin-dialog.js). Только токены. */
+body.dlg-lock{overflow:hidden}
+.dlg-back{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:rgba(19,36,55,.48);animation:dlgFade var(--t-fast) var(--ease)}
+.dlg{position:relative;display:flex;flex-direction:column;width:100%;max-width:480px;max-height:calc(100vh - 48px);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-lg);
+  animation:dlgIn var(--t) var(--ease)}
+.dlg-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 20px 0 24px}
+.dlg-title{font-family:var(--font-disp);font-size:1.15rem;font-weight:500;color:var(--ink);letter-spacing:-.02em;line-height:1.35}
+.dlg-x{flex:0 0 auto;width:32px;height:32px;margin:-4px 0 0;border:none;background:none;border-radius:var(--r-sm);
+  font-size:1.4rem;line-height:1;color:var(--ink-mute);cursor:pointer;
+  transition:background var(--t-fast) var(--ease),color var(--t-fast) var(--ease)}
+.dlg-x:hover{background:var(--surface-2);color:var(--ink)}
+.dlg-body{padding:14px 24px 4px;overflow-y:auto;font-size:.92rem;line-height:1.6;color:var(--ink-2)}
+.dlg-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;padding:18px 24px 22px}
+.dlg-x:focus-visible,.dlg-actions .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.dlg-danger{background:var(--bad);color:var(--surface);border-color:var(--bad);box-shadow:var(--sh-sm)}
+.dlg-danger:hover{background:color-mix(in srgb,var(--bad) 80%,var(--ink));border-color:color-mix(in srgb,var(--bad) 80%,var(--ink))}
+@keyframes dlgFade{from{opacity:0}to{opacity:1}}
+@keyframes dlgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (max-width:480px){
+  .dlg-back{padding:16px}
+  .dlg{max-width:none}
+  .dlg-actions .btn{flex:1 1 auto}
+}
+
+/* «Печать / PDF» отчёта — печатается сам экран: без сайдбара, крошек,
+   формы параметров и кнопок, документ на всю ширину листа; заголовок
+   отчёта (h1#repTitle) остаётся. Правила только для страницы отчёта
+   (report.html: data-page="reports" + #repResultWrap) — каталог и другие
+   страницы кабинета печатаются как раньше.
+   Блок стоит последним: узкие @media выше не должны его перебивать */
+@media print{
+  body.admin[data-page="reports"]:has(#repResultWrap) :is(.side,.crumbs,.top .crumb,.rv-fav,.rv-noprint,.rdoc-actions,.toast,#repResultWrap > .panel-head){display:none !important}
+  body.admin[data-page="reports"]:has(#repResultWrap){background:var(--surface)}
+  body.admin[data-page="reports"]:has(#repResultWrap) .main{margin-left:0;padding:0;max-width:none}
+  body.admin[data-page="reports"]:has(#repResultWrap) .top{margin-bottom:12px}
+  body.admin[data-page="reports"]:has(#repResultWrap) .panel{border:none;box-shadow:none;border-radius:0;margin:0}
+  body.admin[data-page="reports"]:has(#repResultWrap) .panel.pad{padding:0}
+  body.admin[data-page="reports"]:has(#repResultWrap) :is(.table-wrap,.rdoc-scroll){overflow:visible;border:none}
+  body.admin[data-page="reports"]:has(#repResultWrap) :is(.rdoc-table,.rdoc-sum){min-width:0}
 }

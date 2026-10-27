@@ -14,6 +14,8 @@
   var no = new URLSearchParams(location.search).get("no") || "";
   var rep = window.AdminReports.find(no);
   var spec = window.AdminReportSpecs.get(no);
+  /* модель отчёта, экран и выгрузки — общие с каталогом (admin-report-doc.js) */
+  var Doc = window.AdminReportDoc;
 
   /* ---- отчёт не найден ---- */
   if (!rep) {
@@ -54,7 +56,34 @@
 
   function optionsOf(f) {
     var o = typeof f.options === "function" ? f.options() : (f.options || []);
-    return o.map(function (v) { return "<option>" + esc(v) + "</option>"; }).join("");
+    /* вариант — строка (значение = подпись) или { value, label }:
+       у мероприятия в параметр уходит id, а на экране — название */
+    return o.map(function (v) {
+      if (v && typeof v === "object") {
+        return '<option value="' + esc(v.value) + '">' + esc(v.label) + "</option>";
+      }
+      return "<option>" + esc(v) + "</option>";
+    }).join("");
+  }
+
+  /* значения формы → параметры rows(params). Ключ — id поля,
+     у daterange — keys: [от, до] (или id_from / id_to) */
+  function params() {
+    var p = {};
+    fields.forEach(function (f) {
+      if (!f.id) return;
+      if (f.kind === "group" && f.control === "daterange") {
+        var keys = f.keys || [f.id + "_from", f.id + "_to"];
+        var a = $("#f_" + f.id + "_from"), b = $("#f_" + f.id + "_to");
+        p[keys[0]] = a ? a.value : "";
+        p[keys[1]] = b ? b.value : "";
+        return;
+      }
+      var el = $("#f_" + f.id);
+      if (!el) return;
+      p[f.id] = f.kind === "check" ? el.checked : el.value;
+    });
+    return p;
   }
 
   function fieldHtml(f) {
@@ -110,8 +139,67 @@
     (hasMid ? '<div class="rv-col rv-col-mid">' +
       fields.filter(function (f) { return f.kind === "or"; })
             .map(function (f) { return '<div class="rv-row">' + fieldHtml(f) + "</div>"; }).join("") +
-      "</div>" : "") +
+      "</div>" : (fields.some(function (f) { return (f.col || "left") === "right"; })
+      /* сетка формы — три колонки «левая | или | правая»: без пустой
+         средней правая колонка встаёт во вторую (auto) и сжимает левую */
+      ? '<div class="rv-col rv-col-mid" aria-hidden="true"></div>' : "")) +
     colHtml("right");
+
+  /* ---- значения по умолчанию ----
+     Те же, что у выгрузки из каталога (Doc.defaults): период операций —
+     весь журнал, у «Книги операций» период пуст; списки — первый
+     вариант, флажки — f.on (их форма уже проставила сама). */
+  if (spec) {
+    var dflt = Doc.defaults(spec);
+    fields.forEach(function (f) {
+      if (f.control !== "daterange") return;
+      var keys = f.keys || [f.id + "_from", f.id + "_to"];
+      $("#f_" + f.id + "_from").value = dflt[keys[0]];
+      $("#f_" + f.id + "_to").value = dflt[keys[1]];
+    });
+  }
+
+  /* ---- проверка периода ----
+     «с» позже «по» — сообщение под полем, отчёт не строится. Сообщение
+     живёт в строке формы (.rv-row) и снимается при исправлении. */
+  function rangeError(f) {
+    var a = $("#f_" + f.id + "_from"), b = $("#f_" + f.id + "_to");
+    var row = a.closest(".rv-row");
+    var msg = row.parentNode.querySelector('.rv-notice[data-for="' + f.id + '"]');
+    var bad = !!(a.value && b.value && a.value > b.value);
+    [a, b].forEach(function (el) {
+      if (bad) el.setAttribute("aria-invalid", "true");
+      else el.removeAttribute("aria-invalid");
+    });
+    if (!bad) { if (msg) msg.remove(); return false; }
+    if (!msg) {
+      msg = document.createElement("p");
+      msg.className = "rv-notice";
+      msg.dataset.for = f.id;
+      msg.id = "e_" + f.id;
+      msg.setAttribute("role", "alert");
+      row.insertAdjacentElement("afterend", msg);
+      a.setAttribute("aria-describedby", msg.id);
+      b.setAttribute("aria-describedby", msg.id);
+    }
+    msg.textContent = (f.addon || "Период") + ": дата «с» позже даты «по». Исправьте период.";
+    return true;
+  }
+  function validate() {
+    var bad = false;
+    fields.forEach(function (f) {
+      if (f.control === "daterange" && rangeError(f)) bad = true;
+    });
+    return !bad;
+  }
+  fields.forEach(function (f) {
+    if (f.control !== "daterange") return;
+    ["_from", "_to"].forEach(function (sfx) {
+      $("#f_" + f.id + sfx).addEventListener("change", function () {
+        if ($('.rv-notice[data-for="' + f.id + '"]')) rangeError(f);
+      });
+    });
+  });
 
   /* ---- столбцы ---- */
   var shown = {};
@@ -166,124 +254,55 @@
   });
 
   /* ---- результат ---- */
-  var nf = new Intl.NumberFormat("ru-RU");
-  function cell(v, type) {
-    if (type === "money") return nf.format(Math.round(v)) + " ₽";
-    if (type === "int")   return nf.format(v);
-    /* неразрывный пробел: по-русски перед % пробел нужен, но в узком
-       столбце обычный пробел рвёт значение на две строки */
-    if (type === "pct")   return v + "\u00A0%";
-    return String(v);
-  }
-
   var built = false;
+  /* модель, показанная на экране (бланк или таблица): выгрузки берут
+     её, а не форму — иначе после правки параметров без «Показать отчёт»
+     файл разойдётся с экраном (G5) */
+  var lastModel = null;
+  var EMPTY = '<p class="rep-empty">Нет данных за выбранный период.</p>';
+  var EXPORTS = ["#repWord", "#repExcel", "#repCsv", "#repPrint"];
 
-  function renderTable() {
-    var cols = columns.filter(function (c) { return shown[c.id]; });
-    if (!cols.length) {
-      $("#repResult").innerHTML = '<p class="rep-empty">Не выбрано ни одного столбца.</p>';
-      return;
-    }
-    var rows = spec.rows();
-    var totals = {};
-    cols.forEach(function (c) {
-      if (c.type === "int" || c.type === "money") {
-        totals[c.id] = rows.reduce(function (a, r) { return a + (r[c.id] || 0); }, 0);
-      }
-    });
-
-    $("#repResult").innerHTML =
-      '<div class="table-wrap"><table class="dtable rv-table"><thead><tr>' +
-      cols.map(function (c) {
-        return '<th class="' + (c.type === "text" ? "" : "num") + '">' + esc(c.label) + "</th>";
-      }).join("") +
-      "</tr></thead><tbody>" +
-      rows.map(function (r) {
-        return "<tr>" + cols.map(function (c) {
-          return '<td class="' + (c.type === "text" ? "" : "num") + '">' +
-            esc(cell(r[c.id], c.type)) + "</td>";
-        }).join("") + "</tr>";
-      }).join("") +
-      '</tbody><tfoot><tr>' +
-      cols.map(function (c, i) {
-        if (i === 0) return "<td>Итого</td>";
-        return '<td class="num">' + (c.id in totals ? esc(cell(totals[c.id], c.type)) : "") + "</td>";
-      }).join("") +
-      "</tr></tfoot></table></div>";
-  }
-
-  /* ---- бланк документа ----
-     У отчёта со спекой doc результат — не таблица, а бланк: шапка
-     с «Утверждаю», итоги, свод, подписи. Ту же модель забирают
-     кнопки Word и Excel, поэтому собирается она в одном месте. */
-
-  function ruDate(v) {
-    if (!v) return "";
-    var p = v.split("-");
-    return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : v;
-  }
-
-  /* строка события под названием отчёта — то, что выбрано в форме */
-  function eventLine() {
-    var ev = $("#f_event");
-    if (ev && ev.selectedIndex > 0) {
-      /* в списке событие лежит как «Гамлет · 2026-06-12 · Большой зал»,
-         в бланке дата идёт первой */
-      var p = ev.value.split(" · ");
-      if (p.length === 3 && /^\d{4}-\d{2}-\d{2}$/.test(p[1])) {
-        return ruDate(p[1]) + " · " + p[0] + " · " + p[2];
-      }
-      return ev.value;
-    }
-    var from = $("#f_range_from"), to = $("#f_range_to");
-    if (from && to && (from.value || to.value)) {
-      return "Период с " + (ruDate(from.value) || "…") + " по " + (ruDate(to.value) || "…");
-    }
-    var show = $("#f_show");
-    if (show && show.selectedIndex > 0) return show.value;
-    return "";
-  }
-
-  function docModel() {
-    var d = spec.doc;
-    var rows = spec.rows();
-    var inv  = d.invites ? d.invites() : null;
-    /* пригласительные всегда входят в «Всего:» и в свод; флажок решает
-       только, показывать ли их отдельной строкой */
-    var all  = inv ? rows.concat([inv]) : rows;
-    var sep  = !!($("#f_invites") && $("#f_invites").checked);
-    return {
-      org: window.AdminReportDoc.org,
-      title: title,
-      doc: d,
-      cols: columns.filter(function (c) { return shown[c.id]; }),
-      eventLine: eventLine(),
-      rows: rows,
-      invites: sep ? inv : null,
-      totals:  d.totals  ? d.totals(all)  : null,
-      summary: d.summary ? d.summary(all) : null,
-    };
+  /* выгрузки повторяют экран: нечего показать — нечего и выгружать */
+  function setExports(on) {
+    EXPORTS.forEach(function (id) { $(id).disabled = !on; });
   }
 
   function render() {
     var actions = $("#repDocActions");
-    if (!columns.filter(function (c) { return shown[c.id]; }).length) {
+    var cols = columns.filter(function (c) { return shown[c.id]; });
+    lastModel = null;
+    if (!cols.length) {
+      $("#repParams").textContent = "";
+      $("#repParams").hidden = true;
       $("#repResult").innerHTML = '<p class="rep-empty">Не выбрано ни одного столбца.</p>';
       actions.hidden = true;
+      setExports(false);
       return;
     }
-    if (spec.doc) {
-      window.AdminReportDoc.render($("#repResult"), docModel());
-      actions.hidden = false;
+    var m = Doc.model(spec, { no: no, title: title, params: params(), cols: cols });
+    /* у бланка применённые параметры — в его шапке (eventLine) */
+    $("#repParams").textContent = m.kind === "doc" ? "" : m.paramsLine;
+    $("#repParams").hidden = m.kind === "doc";
+    if (m.empty) {
+      $("#repResult").innerHTML = EMPTY;
     } else {
-      renderTable();
-      actions.hidden = true;
+      Doc.render($("#repResult"), m);
+      lastModel = m;
     }
+    actions.hidden = false;
+    setExports(!m.empty);
   }
 
   $("#repRun").addEventListener("click", function () {
     if (!spec) {
       toast("Параметры этого отчёта ещё не заведены");
+      return;
+    }
+    if (!validate()) {
+      /* старый результат с другими параметрами не оставляем на экране */
+      built = false;
+      lastModel = null;
+      $("#repResultWrap").hidden = true;
       return;
     }
     built = true;
@@ -293,10 +312,15 @@
   });
 
   [["#repWord", "word", "Документ Word сохранён"],
-   ["#repExcel", "excel", "Книга Excel сохранена"]].forEach(function (b) {
+   ["#repExcel", "excel", "Книга Excel сохранена"],
+   ["#repCsv", "csv", "Файл CSV сохранён"],
+   ["#repPrint", "print", ""]].forEach(function (b) {
     $(b[0]).addEventListener("click", function () {
-      if (!built || !spec || !spec.doc) return;
-      window.AdminReportDoc.download(docModel(), b[1]);
+      if (!built || !lastModel || $(b[0]).disabled) return;
+      /* печать — это сам экран: форма и кнопки скрыты @media print */
+      if (b[1] === "print") { window.print(); return; }
+      if (b[1] === "csv") Doc.downloadCsv(lastModel);
+      else Doc.download(lastModel, b[1]);
       toast(b[2]);
     });
   });
@@ -328,4 +352,15 @@
 
   buildColumnPicker();
   syncFav();
+
+  /* «⚙ Настроить» из каталога (setup=1): сразу открыть выбор столбцов
+     и поставить фокус в первое поле параметров */
+  if (new URLSearchParams(location.search).get("setup") === "1") {
+    if (canPick) {
+      colsMenu.hidden = false;
+      colsBtn.setAttribute("aria-expanded", "true");
+    }
+    var first = $("#repForm").querySelector("input, select");
+    if (first) first.focus();
+  }
 })();

@@ -194,10 +194,13 @@
     var span = COLS.length + 1;
 
     if (open.what === "letter") {
-      var html = window.AdminLetter ? window.AdminLetter.toHtml(m.letter) : "";
+      /* просмотр письма — с демо-значениями переменных, как предпросмотр в редакторе */
+      var html = window.AdminLetter ? window.AdminLetter.renderVars(window.AdminLetter.toHtml(m.letter)) : "";
+      var tested = window.AdminLetter && window.AdminLetter.lastTest ? window.AdminLetter.lastTest(m.letter) : "";
       return '<tr class="ml-detail"><td colspan="' + span + '">' +
         '<div class="ml-detail-h">Письмо · ' + esc(m.name) + "</div>" +
-        '<iframe class="ml-frame" title="Письмо «' + esc(m.name) + '»" srcdoc="' + esc(html) + '"></iframe>' +
+        (tested ? '<p class="ml-detail-t">' + esc(tested) + "</p>" : "") +
+        '<iframe class="ml-frame" sandbox="" title="Письмо «' + esc(m.name) + '»" srcdoc="' + esc(html) + '"></iframe>' +
         "</td></tr>";
     }
 
