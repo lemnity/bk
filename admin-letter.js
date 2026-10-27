@@ -815,8 +815,16 @@
               btn("mode", "code", "<>", "HTML письма", mode === "code") +
             "</div>" +
             '<div class="lt-tools">' +
-              btn("act", "down", "⤓", "Выгрузить шаблон", false) +
-              btn("act", "up", "⤒", "Загрузить шаблон", false) +
+              ioMenu("import", "Импорт", [
+                ["import-html", "HTML-файл…", "письмо из .html"],
+                ["import-paste", "Вставить HTML-код…", "из буфера обмена"],
+                ["import-json", "Шаблон редактора…", "файл .json"],
+              ]) +
+              ioMenu("export", "Экспорт", [
+                ["export-html", "Скачать HTML-файл", "готовое письмо .html"],
+                ["export-copy", "Скопировать HTML", "в буфер обмена"],
+                ["export-json", "Скачать шаблон редактора", "файл .json — с блоками"],
+              ]) +
               '<span class="lt-sep"></span>' +
               btn("width", "desktop", "▭", "Компьютер", width === "desktop") +
               btn("width", "phone", "▯", "Телефон", width === "phone") +
@@ -833,6 +841,7 @@
             '<span class="lt-test-note" id="ltTestNote"></span>' +
           "</div>" +
           '<input type="file" class="lt-file" accept="application/json,.json" hidden />' +
+          '<input type="file" class="lt-file-html" accept=".html,.htm,text/html" hidden />' +
         "</div>";
       paintTest();
       if (isHtml() && mode === "code") paintLive(false);
@@ -922,6 +931,19 @@
       if (frame) frame.setAttribute("srcdoc", renderVars(toHtml(L)));
     }
 
+    /* Импорт/экспорт — подписанные выпадающие меню: иконки ⤓/⤒ без
+       подписи никто не находил, а HTML-файл письма и вовсе нельзя было
+       загрузить. Меню устроено как «Переменная»: кнопка + role=menu. */
+    function ioMenu(id, label, items) {
+      return '<span class="lt-io">' +
+        '<button type="button" class="lt-io-btn" data-iomenu="' + id + '" aria-haspopup="true" aria-expanded="false">' +
+          esc(label) + ' <span aria-hidden="true">▾</span></button>' +
+        '<span class="lt-io-menu" role="menu" hidden>' + items.map(function (it) {
+          return '<button type="button" role="menuitem" data-io="' + it[0] + '">' + esc(it[1]) +
+            '<small>' + esc(it[2]) + "</small></button>";
+        }).join("") + "</span></span>";
+    }
+
     function btn(kind, val, icon, title, on) {
       return '<button type="button" data-' + kind + '="' + val + '"' + (on ? ' class="is-on"' : "") +
         ' title="' + esc(title) + '"><span class="vh">' + esc(title) + "</span>" + esc(icon) + "</button>";
@@ -931,6 +953,7 @@
     host.addEventListener("click", function (e) {
       var t = e.target.closest("button");
       if (!t || !t.closest(".lt-var")) closeVarMenus();
+      if (!t || !t.closest(".lt-io")) closeIoMenus();
 
       /* выбор блока — по клику мимо кнопок */
       if (!t) {
@@ -944,8 +967,8 @@
       if (t.dataset.tab)   { tab = t.dataset.tab; draw(); return; }
 
       if (t.dataset.act === "side") { sideOpen = !sideOpen; draw(); return; }
-      if (t.dataset.act === "down") { download(); return; }
-      if (t.dataset.act === "up")   { host.querySelector(".lt-file").click(); return; }
+      if (t.dataset.iomenu) { toggleIoMenu(t); return; }
+      if (t.dataset.io) { closeIoMenus(); ioAction(t.dataset.io); return; }
       if (t.classList.contains("lt-test-btn")) { testDialog(); return; }
       if (t.classList.contains("lt-copy")) { copyCode(t); return; }
       if (t.classList.contains("lt-dl-html")) { downloadHtml(); return; }
@@ -1009,6 +1032,7 @@
     host.addEventListener("change", function (e) {
       var el = e.target;
       if (el.classList && el.classList.contains("lt-file")) { upload(el); return; }
+      if (el.classList && el.classList.contains("lt-file-html")) { uploadHtml(el); return; }
       if (el.dataset && el.dataset.img) { uploadImage(el); return; }
       if (!el.dataset || !el.dataset.f || !el.dataset.scope) return;
       if (el.type === "range" || el.type === "color") { draw(); return; }
@@ -1039,6 +1063,10 @@
        не застревала, Esc «отпускает» следующий Tab. */
     host.addEventListener("keydown", function (e) {
       var ta = e.target;
+      if (e.key === "Escape" && ta.closest && ta.closest(".lt-io")) {
+        var ib = ta.closest(".lt-io").querySelector(".lt-io-btn");
+        closeIoMenus(); ib.focus(); return;
+      }
       if (e.key === "Escape" && ta.closest && ta.closest(".lt-var")) {
         var vb = ta.closest(".lt-var").querySelector(".lt-var-btn");
         closeVarMenus(); vb.focus(); return;
@@ -1066,6 +1094,115 @@
       }
       srcInput(ta);
     });
+
+    /* ---- импорт и экспорт ---- */
+    /* клик вне конструктора тоже закрывает открытые меню */
+    document.addEventListener("click", function (e) {
+      if (host.contains(e.target)) return;
+      closeIoMenus();
+      closeVarMenus();
+    });
+
+    function closeIoMenus() {
+      host.querySelectorAll(".lt-io-menu").forEach(function (m) { m.hidden = true; });
+      host.querySelectorAll(".lt-io-btn").forEach(function (b) { b.setAttribute("aria-expanded", "false"); });
+    }
+
+    function toggleIoMenu(b) {
+      var menu = b.parentNode.querySelector(".lt-io-menu");
+      var open = menu.hidden;
+      closeIoMenus();
+      menu.hidden = !open;
+      b.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) menu.querySelector("button").focus();
+    }
+
+    function ioAction(what) {
+      if (what === "export-html") { downloadHtml(); return; }
+      if (what === "export-json") { download(); return; }
+      if (what === "export-copy") {
+        copyText(toHtml(L), function (ok) { onChange(get(), ok ? "copied" : "copy-failed"); });
+        return;
+      }
+      if (what === "import-json") { host.querySelector(".lt-file").click(); return; }
+      if (what === "import-html") { host.querySelector(".lt-file-html").click(); return; }
+      if (what === "import-paste") { pasteDialog(); return; }
+    }
+
+    var MAX_IMPORT = 1024 * 1024; /* 1 МБ: письмо больше 102 КБ Gmail и так обрежет */
+
+    /* Похоже ли на HTML письма: есть хотя бы один тег. Остальное —
+       дело линтера, который покажет предупреждения после импорта. */
+    function looksLikeHtml(text) { return /<[a-z!][^>]*>/i.test(text); }
+
+    /* Импортированный HTML становится письмом в режиме HTML. Блоки
+       остаются в письме — к ним можно вернуться, как после «Редактировать
+       как HTML». Непустое письмо заменяем только с подтверждения. */
+    function applyHtml(text, tag) {
+      text = String(text).replace(/^\uFEFF/, "");
+      var replace = function () {
+        clearTimeout(liveTimer);
+        L.html = text;
+        L.mode = "html";
+        sel = null; adder = null; tab = "style";
+        mode = "code";
+        commit(tag);
+      };
+      if (!letterEmpty()) {
+        window.AdminDialog.confirm({
+          title: "Заменить письмо?",
+          text: "Текущее письмо заменится импортированным HTML. Блоки сохранятся — к ним можно вернуться кнопкой «Вернуться к блокам».",
+          ok: "Заменить",
+        }).then(function (yes) { if (yes) replace(); });
+        return;
+      }
+      replace();
+    }
+
+    function uploadHtml(input) {
+      var file = input.files && input.files[0];
+      input.value = "";
+      if (!file) return;
+      if (file.size > MAX_IMPORT) { onChange(get(), "import-big"); return; }
+      var fr = new FileReader();
+      fr.onload = function () {
+        var text = String(fr.result);
+        if (!looksLikeHtml(text)) { onChange(get(), "import-bad"); return; }
+        applyHtml(text, "import-html");
+      };
+      fr.readAsText(file);
+    }
+
+    function pasteDialog() {
+      window.AdminDialog.open({
+        title: "Вставить HTML-код письма",
+        body: '<label class="lt-paste-l" for="ltPaste">HTML письма целиком — например, из другого сервиса рассылок</label>' +
+          '<textarea id="ltPaste" class="lt-paste" rows="12" spellcheck="false" aria-describedby="ltPasteErr"></textarea>' +
+          '<p class="lt-paste-err" id="ltPasteErr" hidden></p>',
+        actions: [
+          { label: "Отмена", kind: "plain", value: null },
+          { label: "Импортировать", kind: "primary", value: "ok", validate: function (root) {
+            var ta = root.querySelector("#ltPaste"), err = root.querySelector("#ltPasteErr");
+            var v = ta.value.trim();
+            var msg = !v ? "Вставьте HTML-код письма" :
+              v.length > MAX_IMPORT ? "Слишком большой код — больше 1 МБ" :
+              !looksLikeHtml(v) ? "Не похоже на HTML: нет ни одного тега" : "";
+            err.textContent = msg;
+            err.hidden = !msg;
+            ta.setAttribute("aria-invalid", msg ? "true" : "false");
+            if (msg) { ta.focus(); return false; }
+            root.dataset.html = v;
+            return true;
+          } },
+        ],
+        onOpen: function (root) { pasteRoot = root; },
+      }).then(function (v) {
+        var html = pasteRoot && pasteRoot.dataset.html;
+        pasteRoot = null;
+        if (v === "ok" && html) applyHtml(html, "import-html");
+      });
+    }
+    var pasteRoot = null;
 
     /* ---- переменные и форматирование ---- */
     function closeVarMenus() {
@@ -1347,11 +1484,19 @@
           onChange(get(), "upload-bad");
           return;
         }
-        L = normalize(parsed);
-        sel = null;
-        tab = "style";
-        mode = isHtml() ? "code" : "edit";
-        commit("upload");
+        var replace = function () {
+          L = normalize(parsed);
+          sel = null;
+          tab = "style";
+          mode = isHtml() ? "code" : "edit";
+          commit("upload");
+        };
+        if (letterEmpty()) { replace(); return; }
+        window.AdminDialog.confirm({
+          title: "Заменить письмо?",
+          text: "Текущее письмо заменится письмом из шаблона.",
+          ok: "Заменить",
+        }).then(function (yes) { if (yes) replace(); });
       };
       fr.readAsText(file);
     }
@@ -1375,9 +1520,13 @@
     /* Копируем то же, что уходит в файл и в отправку, — toHtml(L), а не
        текст поля: в режиме HTML к нему добавляется строка отписки. */
     function copyCode(btnEl) {
-      var text = toHtml(L);
-      var done = function (ok) { btnEl.textContent = ok ? "Скопировано" : "Не удалось";
-        setTimeout(function () { btnEl.textContent = "Скопировать"; }, 1800); };
+      copyText(toHtml(L), function (ok) {
+        btnEl.textContent = ok ? "Скопировано" : "Не удалось";
+        setTimeout(function () { btnEl.textContent = "Скопировать"; }, 1800);
+      }, btnEl);
+    }
+
+    function copyText(text, done, focusBack) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
         return;
@@ -1391,18 +1540,20 @@
       var ok = false;
       try { ok = document.execCommand("copy"); } catch (_) { ok = false; }
       tmp.remove();
-      btnEl.focus();
+      if (focusBack) focusBack.focus();
       done(ok);
     }
 
     function get() { return JSON.parse(JSON.stringify(L)); }
+
+    function letterEmpty() { return isHtml() ? !L.html.trim() : !L.blocks.length; }
 
     draw();
 
     return {
       get: get,
       html: function () { return toHtml(L); },
-      isEmpty: function () { return isHtml() ? !L.html.trim() : !L.blocks.length; },
+      isEmpty: letterEmpty,
       set: function (v) {
         L = normalize(v); sel = null; tab = "style";
         if (isHtml()) mode = "code";

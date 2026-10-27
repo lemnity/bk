@@ -1072,6 +1072,22 @@ a{color:inherit;text-decoration:none}
   background:var(--surface);color:var(--ink-2);font-family:var(--font-ui);font-size:.76rem;cursor:pointer}
 .lt-fmt button:hover{background:var(--accent-tint);color:var(--accent)}
 .lt-fmt button[aria-expanded="true"]{background:var(--accent-tint);color:var(--accent);border-color:var(--accent)}
+/* импорт/экспорт письма — подписанные меню на панели конструктора */
+.lt-io{position:relative;display:inline-block}
+.lt-bar .lt-io-btn{width:auto;padding:0 10px;gap:4px;display:inline-flex;align-items:center;
+  font-family:var(--font-ui);font-size:.8rem;font-weight:500;border-color:var(--line)}
+.lt-bar .lt-io-btn[aria-expanded="true"]{background:var(--surface);border-color:var(--accent);color:var(--accent)}
+.lt-io-menu{position:absolute;top:calc(100% + 4px);right:0;z-index:6;display:grid;min-width:240px;padding:4px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-lg)}
+.lt-bar .lt-io-menu button{width:auto;height:auto;display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  padding:7px 10px;border:none;text-align:left;font-family:var(--font-ui);font-size:.82rem;color:var(--ink)}
+.lt-io-menu small{font-size:.72rem;color:var(--ink-mute)}
+.lt-bar .lt-io-menu button:hover,.lt-bar .lt-io-menu button:focus-visible{background:var(--accent-tint);color:var(--accent)}
+.lt-paste-l{display:block;font-size:.82rem;color:var(--ink-2);margin-bottom:6px}
+.lt-paste{width:100%;min-height:220px;resize:vertical;padding:10px;border:1px solid var(--line-2);border-radius:var(--r-sm);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.78rem;line-height:1.5;color:var(--ink);background:var(--surface)}
+.lt-paste[aria-invalid="true"]{border-color:var(--bad)}
+.lt-paste-err{margin:6px 0 0;font-size:.78rem;color:var(--bad)}
 .lt-var{position:relative;display:inline-block}
 .lt-var-menu{position:absolute;top:calc(100% + 4px);left:0;z-index:5;display:grid;min-width:230px;padding:4px;
   background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);box-shadow:var(--sh-lg)}

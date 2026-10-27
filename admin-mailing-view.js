@@ -80,10 +80,15 @@
     onChange: function (_, what) {
       /* конструктор сам формулирует сообщения о загрузке картинок */
       if (what && what.indexOf("msg:") === 0) { toast(what.slice(4)); return; }
-      if (what === "upload-bad") { toast("Это не шаблон письма — в файле нет блоков"); return; }
+      if (what === "upload-bad") { toast("Это не шаблон письма"); return; }
+      if (what === "import-bad") { toast("Файл не похож на HTML-письмо"); return; }
+      if (what === "import-big") { toast("Файл больше 1 МБ — такое письмо не дойдёт"); return; }
+      if (what === "copied") { toast("HTML письма скопирован"); return; }
+      if (what === "copy-failed") { toast("Не удалось скопировать — используйте «Скачать HTML-файл»"); return; }
       if (what === "download") { toast("Шаблон выгружен"); return; }
       if (what === "download-html") { toast("HTML письма скачан"); return; }
       if (what === "upload") { toast("Шаблон загружен"); }
+      if (what === "import-html") { toast("HTML письма импортирован — проверьте предупреждения под кодом"); }
       /* журнал тестов: у сохранённой рассылки пишем в стор сразу (только его,
          несохранённые правки не трогаем), у новой — уйдёт вместе с письмом */
       if (what === "test") {

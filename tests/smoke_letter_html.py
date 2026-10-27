@@ -139,7 +139,8 @@ try:
 
         # JSON-шаблон хранит mode и html
         with page.expect_download() as d:
-            page.click('[data-act="down"]')
+            page.click('[data-iomenu="export"]')
+            page.click('[data-io="export-json"]')
         tpl_path = d.value.path()
         tpl = json.load(open(tpl_path, encoding="utf-8"))
         check(tpl.get("mode") == "html" and tpl.get("html") == SRC, "шаблон JSON: mode/html")
