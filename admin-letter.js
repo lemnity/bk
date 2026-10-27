@@ -449,6 +449,40 @@
   }
 
   /* ------------------------------------------------------------
+     Журнал тестовых отправок: letter.tests = [{to:[…], at:ISO}]
+     ------------------------------------------------------------ */
+  var TEST_MAX = 5, TEST_KEEP = 20;
+  var MAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+  function pluralRu(n, f) {
+    var a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return f[2];
+    if (b > 1 && b < 5) return f[1];
+    return b === 1 ? f[0] : f[2];
+  }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function ruStamp(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return String(iso || "");
+    return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + "." + d.getFullYear() +
+      " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  function parseTo(raw) {
+    var seen = {}, out = [];
+    String(raw || "").split(/[,;\n]+/).forEach(function (x) {
+      x = x.trim();
+      if (x && !seen[x.toLowerCase()]) { seen[x.toLowerCase()] = 1; out.push(x); }
+    });
+    return out;
+  }
+  /* «Последний тест: 27.10.2026 14:05, a@x.ru, b@x.ru» или "" */
+  function lastTest(letter) {
+    var t = letter && Array.isArray(letter.tests) && letter.tests.length ? letter.tests[letter.tests.length - 1] : null;
+    if (!t || !Array.isArray(t.to)) return "";
+    return "Последний тест: " + ruStamp(t.at) + ", " + t.to.join(", ");
+  }
+
+  /* ------------------------------------------------------------
      Виджет
      ------------------------------------------------------------ */
   function create(opts) {
@@ -778,14 +812,76 @@
             '<div class="lt-stage" data-mode="' + mode + '">' + stage + "</div>" +
             '<aside class="lt-side">' + side + "</aside>" +
           "</div>" +
+          '<div class="lt-test">' +
+            '<button type="button" class="btn btn-plain lt-test-btn" aria-describedby="ltTestNote">Тестовая отправка</button>' +
+            '<span class="lt-test-note" id="ltTestNote"></span>' +
+          "</div>" +
           '<input type="file" class="lt-file" accept="application/json,.json" hidden />' +
         "</div>";
+      paintTest();
       if (isHtml() && mode === "code") paintLive(false);
+    }
+
+    /* ---- тестовая отправка ----
+       Почтового сервера нет: «отправка» — запись в журнал L.tests
+       (последние 20), который уходит в стор вместе с письмом. */
+    function paintTest() {
+      var btnEl = host.querySelector(".lt-test-btn");
+      var note = host.querySelector(".lt-test-note");
+      if (!btnEl || !note) return;
+      var empty = L.mode === "html" ? !L.html.trim() : !L.blocks.length;
+      btnEl.disabled = empty;
+      if (empty) { btnEl.title = "Сначала составьте письмо"; }
+      else btnEl.removeAttribute("title");
+      note.textContent = empty
+        ? "Письмо пустое — добавьте содержимое, тогда можно отправить тест."
+        : lastTest(L);
+    }
+
+    function testDialog() {
+      if (!window.AdminDialog) return;
+      var last = Array.isArray(L.tests) && L.tests.length ? L.tests[L.tests.length - 1] : null;
+      var found = null;
+      window.AdminDialog.open({
+        title: "Тестовая отправка",
+        body: '<div class="lt-f">' +
+          '<label class="lt-f-l" for="ltTestTo">Адреса (от 1 до ' + TEST_MAX + ')</label>' +
+          '<textarea id="ltTestTo" rows="3" spellcheck="false" autocomplete="off" aria-describedby="ltTestHint ltTestErr">' +
+            esc(last && Array.isArray(last.to) ? last.to.join(", ") : "") + "</textarea>" +
+          '<span class="lt-f-h" id="ltTestHint">Через запятую или с новой строки.</span>' +
+          '<p class="lt-test-err" id="ltTestErr" role="alert" hidden></p></div>' +
+          '<p class="lt-f-h">Реальной отправки нет: кабинет работает без почтового сервера — письмо попадёт в журнал тестов.</p>',
+        actions: [
+          { label: "Отмена", kind: "plain", value: false },
+          { label: "Отправить тест", kind: "primary", value: "send", validate: function (root) {
+              var ta = root.querySelector("#ltTestTo"), er = root.querySelector("#ltTestErr");
+              var list = parseTo(ta.value), msg = "";
+              var bad = list.filter(function (x) { return !MAIL_RE.test(x); });
+              if (!list.length) msg = "Укажите хотя бы один адрес.";
+              else if (bad.length) msg = "Не похоже на адрес: " + bad.slice(0, 3).join(", ") +
+                (bad.length > 3 ? " и ещё " + (bad.length - 3) : "") + ".";
+              else if (list.length > TEST_MAX) msg = "Не больше " + TEST_MAX + " адресов за раз, сейчас " + list.length + ".";
+              er.textContent = msg; er.hidden = !msg;
+              if (msg) { ta.setAttribute("aria-invalid", "true"); ta.focus(); return false; }
+              ta.removeAttribute("aria-invalid");
+              found = list;
+              return true;
+            } }
+        ],
+      }).then(function (v) {
+        if (v !== "send" || !found) return;
+        L.tests = (Array.isArray(L.tests) ? L.tests : []).concat([{ to: found, at: new Date().toISOString() }]).slice(-TEST_KEEP);
+        onChange(get(), "test");
+        onChange(get(), "msg:Тест отправлен на " + found.length + " " + pluralRu(found.length, ["адрес", "адреса", "адресов"]));
+        paintTest();
+        var b2 = host.querySelector(".lt-test-btn"); if (b2) b2.focus();
+      });
     }
 
     /* Размер, замечания и (по желанию) живой предпросмотр — без полной
        перерисовки, чтобы не сбивать курсор в редакторе. */
     function paintLive(withFrame) {
+      paintTest();
       var size = host.querySelector(".lt-size");
       if (size) {
         var bytes = byteSize(L.html);
@@ -834,6 +930,7 @@
       if (t.dataset.act === "side") { sideOpen = !sideOpen; draw(); return; }
       if (t.dataset.act === "down") { download(); return; }
       if (t.dataset.act === "up")   { host.querySelector(".lt-file").click(); return; }
+      if (t.classList.contains("lt-test-btn")) { testDialog(); return; }
       if (t.classList.contains("lt-copy")) { copyCode(t); return; }
       if (t.classList.contains("lt-dl-html")) { downloadHtml(); return; }
       if (t.classList.contains("lt-to-html")) { toHtmlMode(); return; }
@@ -1300,6 +1397,7 @@
     LINT_RULES: LINT_RULES,
     richText: richText,
     renderVars: renderVars,
+    lastTest: lastTest,
     VARS: VARS,
     TYPES: TYPES,
     PALETTE: PALETTE,

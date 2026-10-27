@@ -84,6 +84,19 @@
       if (what === "download") { toast("Шаблон выгружен"); return; }
       if (what === "download-html") { toast("HTML письма скачан"); return; }
       if (what === "upload") { toast("Шаблон загружен"); }
+      /* журнал тестов: у сохранённой рассылки пишем в стор сразу (только его,
+         несохранённые правки не трогаем), у новой — уйдёт вместе с письмом */
+      if (what === "test") {
+        if (rec) {
+          var tests = (_ && _.tests) || [];
+          window.AdminStore.update(function (st) {
+            var m = st.MAILINGS.items.find(function (x) { return x.id === rec.id; });
+            if (m) { m.letter = Object.assign({}, m.letter || {}, { tests: tests }); }
+          });
+          rec = M.find(rec.id);
+        } else markDirty();
+        return;
+      }
       markDirty();
     },
   });

@@ -196,8 +196,10 @@
     if (open.what === "letter") {
       /* просмотр письма — с демо-значениями переменных, как предпросмотр в редакторе */
       var html = window.AdminLetter ? window.AdminLetter.renderVars(window.AdminLetter.toHtml(m.letter)) : "";
+      var tested = window.AdminLetter && window.AdminLetter.lastTest ? window.AdminLetter.lastTest(m.letter) : "";
       return '<tr class="ml-detail"><td colspan="' + span + '">' +
         '<div class="ml-detail-h">Письмо · ' + esc(m.name) + "</div>" +
+        (tested ? '<p class="ml-detail-t">' + esc(tested) + "</p>" : "") +
         '<iframe class="ml-frame" sandbox="" title="Письмо «' + esc(m.name) + '»" srcdoc="' + esc(html) + '"></iframe>' +
         "</td></tr>";
     }
