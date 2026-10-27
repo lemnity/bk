@@ -197,7 +197,7 @@
       var html = window.AdminLetter ? window.AdminLetter.toHtml(m.letter) : "";
       return '<tr class="ml-detail"><td colspan="' + span + '">' +
         '<div class="ml-detail-h">Письмо · ' + esc(m.name) + "</div>" +
-        '<iframe class="ml-frame" title="Письмо «' + esc(m.name) + '»" srcdoc="' + esc(html) + '"></iframe>' +
+        '<iframe class="ml-frame" sandbox="" title="Письмо «' + esc(m.name) + '»" srcdoc="' + esc(html) + '"></iframe>' +
         "</td></tr>";
     }
 

@@ -984,7 +984,27 @@ a{color:inherit;text-decoration:none}
 .lt-code textarea{width:100%;height:520px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   font-size:.76rem;line-height:1.55;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);
   border-radius:var(--r-sm);padding:14px;resize:vertical}
-.lt-copy{position:absolute;top:10px;right:12px;padding:6px 12px;font-size:.78rem}
+/* панель над кодом: переход между режимами, размер, скачать, скопировать */
+.lt-code-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 10px}
+.lt-code-bar .btn{padding:6px 12px;font-size:.78rem}
+.lt-code-sp{flex:1 1 auto}
+.lt-size{font-size:.8rem;color:var(--ink-mute)}
+.lt-size.is-warn{color:var(--warn);font-weight:500}
+/* режим HTML: редактор и живой предпросмотр рядом, на узком — друг под другом */
+.lt-split{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}
+.lt-src-wrap{flex:1 1 300px;min-width:0}
+.lt-code .lt-src{color:var(--ink);tab-size:2;white-space:pre;overflow:auto}
+.lt-src-wrap .lt-f-h{display:block;margin-top:6px}
+.lt-live{flex:1 1 340px;min-width:0;height:520px}
+.lt-lint{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.lt-lint-i{font-size:.8rem;line-height:1.5;padding:7px 10px;border-radius:var(--r-sm);
+  border:1px solid var(--line);background:var(--surface);color:var(--ink-2)}
+.lt-lint-i b{font-weight:600;margin-right:4px}
+.lt-lint-i.is-warn{border-color:var(--warn);color:var(--warn)}
+.lt-lint-i.is-error{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.lt-lint-i.is-ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-bg)}
+.lt-bar button:disabled,.lt-tabs button:disabled{opacity:.45;cursor:not-allowed}
+.lt-bar button:disabled:hover{background:none;color:var(--ink-2)}
 
 /* блок на холсте: обводка и микро-панель появляются по наведению */
 .lt-b{position:relative;outline:1px dashed transparent;outline-offset:-1px}

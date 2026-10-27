@@ -14,7 +14,12 @@
    подписчику: стили кабинета не должны подкрашивать письмо и
    создавать ложное впечатление, что вёрстка в порядке.
 
-   Наружу: window.AdminLetter.create(opts) и .toHtml(letter).
+   Письмо можно перевести в режим HTML (letter.mode = "html"): тогда
+   оно уходит ровно тем кодом, что написан во вкладке «HTML письма»,
+   а блоки лежат рядом нетронутыми до «Вернуться к блокам».
+
+   Наружу: window.AdminLetter.create(opts) и .toHtml(letter),
+   .lintHtml(html) — замечания к HTML письма.
    ============================================================ */
 (function () {
   "use strict";
@@ -250,6 +255,8 @@
      HTML письма
      ------------------------------------------------------------ */
   function toHtml(L) {
+    /* письмо в режиме HTML уходит ровно тем кодом, что написал человек */
+    if (L && L.mode === "html") return String(L.html || "");
     var st = L.style;
     var frame = st.border ? "border:1px solid " + st.border + ";" : "";
     return '<!DOCTYPE html>\n<html lang="ru"><head><meta charset="utf-8" />' +
@@ -269,6 +276,54 @@
   }
 
   /* ------------------------------------------------------------
+     Проверка HTML письма
+     ------------------------------------------------------------
+     Правила — данными: каждое смотрит на исходник и говорит, есть ли
+     проблема. Новое правило — ещё одна запись в LINT_RULES. Это не
+     валидатор HTML, а напоминание о том, что ломается в почтовиках. */
+  var GMAIL_CLIP = 102 * 1024; /* больше — Gmail прячет хвост под «Показать полностью» */
+
+  function tableTooWide(html) {
+    var re = /<table\b[^>]*>/gi, m;
+    while ((m = re.exec(html))) {
+      var tag = m[0];
+      var a = /\bwidth\s*=\s*["']?\s*(\d+)/i.exec(tag);
+      var s = /style\s*=\s*["'][^"']*\bwidth\s*:\s*(\d+)px/i.exec(tag);
+      if ((a && Number(a[1]) > PAGE_W) || (s && Number(s[1]) > PAGE_W)) return true;
+    }
+    return false;
+  }
+
+  var LINT_RULES = [
+    { level: "warn", text: "Нет табличного каркаса — Outlook может разъехаться",
+      test: function (h) { return !/<table\b/i.test(h); } },
+    { level: "error", text: "В письме есть <script> — почтовики вырезают скрипты, а часть писем с ними отправляет в спам",
+      test: function (h) { return /<script\b/i.test(h); } },
+    { level: "warn", text: "Внешние стили (<link rel=\"stylesheet\">, @import) почтовики не подгружают — задавайте стили прямо в тегах",
+      test: function (h) {
+        return /<link\b[^>]*rel\s*=\s*["']?stylesheet/i.test(h) || /@import\b/i.test(h);
+      } },
+    { level: "warn", text: "Пустая ссылка (href=\"#\" или без адреса) — укажите, куда она ведёт",
+      test: function (h) { return /\bhref\s*=\s*(["'])\s*#?\s*\1/i.test(h); } },
+    { level: "warn", text: "Картинки data-URL не показываются в Gmail/Outlook",
+      test: function (h) { return /\bsrc\s*=\s*["']?\s*data:/i.test(h); } },
+    { level: "warn", text: "Таблица шире " + PAGE_W + "px — в Outlook и на телефоне письмо поедет вбок",
+      test: tableTooWide },
+    { level: "warn", text: "Нет </body> или </html> — документ письма не закрыт",
+      test: function (h) { return !/<\/body\s*>/i.test(h) || !/<\/html\s*>/i.test(h); } },
+  ];
+
+  function lintHtml(html) {
+    var h = String(html || "");
+    return LINT_RULES.filter(function (r) { return r.test(h); })
+      .map(function (r) { return { level: r.level, text: r.text }; });
+  }
+
+  function byteSize(s) {
+    return new Blob([String(s || "")]).size;
+  }
+
+  /* ------------------------------------------------------------
      Виджет
      ------------------------------------------------------------ */
   function create(opts) {
@@ -276,19 +331,30 @@
     var onChange = opts.onChange || function () {};
     var L = normalize(opts.value);
 
-    var mode = "edit";       /* edit | preview | code */
+    var mode = L.mode === "html" ? "code" : "edit";  /* edit | preview | code */
     var width = "desktop";   /* desktop | phone */
     var tab = "style";       /* style | props */
     var sel = null;          /* путь к выбранному блоку, массив */
     var adder = null;        /* где открыта палитра: {path, slot, index} */
     var sideOpen = true;
+    var liveTimer = null;    /* отложенное обновление предпросмотра HTML */
+    var tabOut = false;      /* после Esc клавиша Tab уводит фокус из редактора */
 
+    /* Незнакомые поля письма сохраняем как есть: их добавляют другие
+       части кабинета, и конструктор не должен их терять. */
     function normalize(v) {
-      var d = { style: { bg: "#F2F5F9", canvas: "#FFFFFF", border: "", radius: 0, font: "modern", ink: "#132437" }, blocks: [] };
+      var d = { style: { bg: "#F2F5F9", canvas: "#FFFFFF", border: "", radius: 0, font: "modern", ink: "#132437" },
+                blocks: [], mode: "blocks", html: "" };
       if (!v || typeof v !== "object") return d;
-      return { style: Object.assign({}, d.style, v.style || {}),
-               blocks: Array.isArray(v.blocks) ? JSON.parse(JSON.stringify(v.blocks)) : [] };
+      var out = JSON.parse(JSON.stringify(v));
+      out.style = Object.assign({}, d.style, v.style || {});
+      out.blocks = Array.isArray(v.blocks) ? out.blocks : [];
+      out.mode = v.mode === "html" ? "html" : "blocks";
+      out.html = typeof v.html === "string" ? v.html : "";
+      return out;
     }
+
+    function isHtml() { return L.mode === "html"; }
 
     /* ---- адресация ----
        Путь — массив вида [3] или [3,"c0",1]: индекс, слот, индекс.
@@ -464,21 +530,74 @@
         }).join("");
     }
 
+    /* Предпросмотр — всегда в песочнице без allow-scripts: HTML письма
+       может прийти откуда угодно, и в кабинете он исполняться не должен. */
+    function frameHtml(cls, w, prop) {
+      return '<iframe class="' + cls + '" sandbox="" title="Предпросмотр письма" style="' + (prop || "width") +
+        ":" + w + 'px" srcdoc="' + esc(toHtml(L)) + '"></iframe>';
+    }
+
+    function codeBarHtml() {
+      return '<div class="lt-code-bar">' +
+        (isHtml()
+          ? '<button type="button" class="btn btn-plain lt-to-blocks">Вернуться к блокам</button>' +
+            '<span class="lt-size"></span>'
+          : '<button type="button" class="btn btn-plain lt-to-html">Редактировать как HTML</button>') +
+        '<span class="lt-code-sp"></span>' +
+        '<button type="button" class="btn btn-plain lt-dl-html">Скачать .html</button>' +
+        '<button type="button" class="btn btn-plain lt-copy">Скопировать</button>' +
+        "</div>";
+    }
+
+    function codeHtml() {
+      if (!isHtml()) {
+        return '<div class="lt-code">' + codeBarHtml() +
+          '<textarea readonly spellcheck="false" aria-label="HTML письма">' + esc(toHtml(L)) + "</textarea></div>";
+      }
+      return '<div class="lt-code lt-code-html">' + codeBarHtml() +
+        '<div class="lt-split">' +
+          '<div class="lt-src-wrap">' +
+            '<textarea class="lt-src" spellcheck="false" autocomplete="off" autocapitalize="off" ' +
+              'aria-label="HTML-код письма" aria-describedby="ltSrcHint">' + esc(L.html) + "</textarea>" +
+            '<p class="lt-f-h" id="ltSrcHint">Tab — отступ в 2 пробела, Shift+Tab — снять отступ. ' +
+              "Чтобы уйти из редактора клавиатурой: Esc, затем Tab.</p>" +
+          "</div>" +
+          frameHtml("lt-frame lt-live", width === "phone" ? PHONE_W : PAGE_W + 48, "max-width") +
+        "</div>" +
+        '<ul class="lt-lint" aria-live="polite"></ul>' +
+        "</div>";
+    }
+
     function draw() {
+      if (isHtml() && mode === "edit") mode = "code";
       var stage = mode === "edit"
         ? '<div class="lt-page"><div class="lt-canvas" style="' + stageStyle() + '">' +
           canvasHtml() + "</div></div>"
         : mode === "preview"
-          ? '<iframe class="lt-frame" title="Предпросмотр письма" style="width:' +
-            (width === "phone" ? PHONE_W : PAGE_W + 48) + 'px" srcdoc="' + esc(toHtml(L)) + '"></iframe>'
-          : '<div class="lt-code"><button type="button" class="btn btn-plain lt-copy">Скопировать</button>' +
-            "<textarea readonly spellcheck=\"false\">" + esc(toHtml(L)) + "</textarea></div>";
+          ? frameHtml("lt-frame", width === "phone" ? PHONE_W : PAGE_W + 48)
+          : codeHtml();
+
+      var side = isHtml()
+        ? '<div class="lt-tabs">' +
+            '<button type="button" disabled>Стиль</button><button type="button" disabled>Свойства</button>' +
+          "</div>" +
+          '<div class="lt-pane"><p class="lt-empty">Письмо в режиме HTML: оформление и содержимое ' +
+            "задаются в коде. Блоки, стиль и свойства вернутся по кнопке «Вернуться к блокам» " +
+            "во вкладке «HTML письма».</p></div>"
+        : '<div class="lt-tabs">' +
+            '<button type="button" data-tab="style"' + (tab === "style" ? ' class="is-on"' : "") + ">Стиль</button>" +
+            '<button type="button" data-tab="props"' + (tab === "props" ? ' class="is-on"' : "") + ">Свойства</button>" +
+          "</div>" +
+          '<div class="lt-pane">' + paneHtml() + "</div>";
 
       host.innerHTML =
         '<div class="lt' + (sideOpen ? "" : " lt-narrow") + '">' +
           '<div class="lt-bar">' +
             '<div class="lt-modes">' +
-              btn("mode", "edit", "✎", "Редактор", mode === "edit") +
+              (isHtml()
+                ? '<button type="button" disabled title="Редактор блоков недоступен в режиме HTML">' +
+                  '<span class="vh">Редактор блоков недоступен в режиме HTML</span>✎</button>'
+                : btn("mode", "edit", "✎", "Редактор", mode === "edit")) +
               btn("mode", "preview", "◉", "Предпросмотр", mode === "preview") +
               btn("mode", "code", "<>", "HTML письма", mode === "code") +
             "</div>" +
@@ -494,16 +613,38 @@
           "</div>" +
           '<div class="lt-body">' +
             '<div class="lt-stage" data-mode="' + mode + '">' + stage + "</div>" +
-            '<aside class="lt-side">' +
-              '<div class="lt-tabs">' +
-                '<button type="button" data-tab="style"' + (tab === "style" ? ' class="is-on"' : "") + ">Стиль</button>" +
-                '<button type="button" data-tab="props"' + (tab === "props" ? ' class="is-on"' : "") + ">Свойства</button>" +
-              "</div>" +
-              '<div class="lt-pane">' + paneHtml() + "</div>" +
-            "</aside>" +
+            '<aside class="lt-side">' + side + "</aside>" +
           "</div>" +
           '<input type="file" class="lt-file" accept="application/json,.json" hidden />' +
         "</div>";
+      if (isHtml() && mode === "code") paintLive(false);
+    }
+
+    /* Размер, замечания и (по желанию) живой предпросмотр — без полной
+       перерисовки, чтобы не сбивать курсор в редакторе. */
+    function paintLive(withFrame) {
+      var size = host.querySelector(".lt-size");
+      if (size) {
+        var bytes = byteSize(L.html);
+        var big = bytes > GMAIL_CLIP;
+        size.className = "lt-size" + (big ? " is-warn" : "");
+        size.textContent = (bytes / 1024).toFixed(1).replace(".", ",") + " КБ" +
+          (big ? " — больше 102 КБ, Gmail обрежет письмо" : "");
+      }
+      var list = host.querySelector(".lt-lint");
+      if (list) {
+        var notes = lintHtml(L.html);
+        var next = notes.length
+          ? notes.map(function (n) {
+              return '<li class="lt-lint-i is-' + n.level + '"><b>' +
+                (n.level === "error" ? "Ошибка" : "Внимание") + "</b> " + esc(n.text) + "</li>";
+            }).join("")
+          : '<li class="lt-lint-i is-ok">Замечаний нет</li>';
+        /* список озвучивается (aria-live) — трогаем, только если он изменился */
+        if (list.getAttribute("data-k") !== next) { list.setAttribute("data-k", next); list.innerHTML = next; }
+      }
+      var frame = withFrame && host.querySelector(".lt-live");
+      if (frame) frame.setAttribute("srcdoc", toHtml(L));
     }
 
     function btn(kind, val, icon, title, on) {
@@ -530,6 +671,9 @@
       if (t.dataset.act === "down") { download(); return; }
       if (t.dataset.act === "up")   { host.querySelector(".lt-file").click(); return; }
       if (t.classList.contains("lt-copy")) { copyCode(t); return; }
+      if (t.classList.contains("lt-dl-html")) { downloadHtml(); return; }
+      if (t.classList.contains("lt-to-html")) { toHtmlMode(); return; }
+      if (t.classList.contains("lt-to-blocks")) { toBlocksMode(); return; }
 
       if (t.dataset.add) {
         var key = t.dataset.add;
@@ -554,6 +698,7 @@
 
     host.addEventListener("input", function (e) {
       var el = e.target;
+      if (el.classList && el.classList.contains("lt-src")) { srcInput(el); return; }
       if (!el.dataset || !el.dataset.f || !el.dataset.scope) return;
 
       /* ползунок и цвет отдают значение на каждый шаг — их показываем
@@ -580,6 +725,72 @@
       apply(el.dataset.scope, el.dataset.f, el.value);
       commit("field");
     });
+
+    /* ---- режим HTML ---- */
+    function srcInput(el) {
+      L.html = el.value;
+      onChange(get(), "html");
+      paintLive(false);
+      clearTimeout(liveTimer);
+      liveTimer = setTimeout(function () { paintLive(true); }, 300);
+    }
+
+    /* Tab в редакторе кода — отступ, а не уход фокуса. Чтобы клавиатура
+       не застревала, Esc «отпускает» следующий Tab. */
+    host.addEventListener("keydown", function (e) {
+      var ta = e.target;
+      if (!ta.classList || !ta.classList.contains("lt-src")) return;
+      if (e.key === "Escape") { tabOut = true; return; }
+      if (e.key !== "Tab") { tabOut = false; return; }
+      if (tabOut) { tabOut = false; return; }
+      e.preventDefault();
+      var v = ta.value, a = ta.selectionStart, b = ta.selectionEnd;
+      if (!e.shiftKey) {
+        ta.value = v.slice(0, a) + "  " + v.slice(b);
+        ta.selectionStart = ta.selectionEnd = a + 2;
+      } else {
+        var ls = v.lastIndexOf("\n", a - 1) + 1;
+        var cut = /^ {1,2}/.exec(v.slice(ls));
+        if (!cut) return;
+        var n = cut[0].length;
+        ta.value = v.slice(0, ls) + v.slice(ls + n);
+        ta.selectionStart = Math.max(ls, a - n);
+        ta.selectionEnd = Math.max(ls, b - n);
+      }
+      srcInput(ta);
+    });
+
+    function toHtmlMode() {
+      window.AdminDialog.confirm({
+        title: "Редактировать как HTML?",
+        text: "Письмо превратится в HTML-код. Блоки можно будет вернуть, но правки кода тогда пропадут.",
+        ok: "Редактировать как HTML",
+      }).then(function (yes) {
+        if (!yes) return;
+        /* блоки остаются в письме нетронутыми — к ним можно вернуться */
+        L.html = toHtml(L);
+        L.mode = "html";
+        sel = null; adder = null; tab = "style";
+        mode = "code";
+        commit("mode");
+      });
+    }
+
+    function toBlocksMode() {
+      window.AdminDialog.confirm({
+        title: "Вернуться к блокам?",
+        text: "Письмо снова соберётся из блоков, а правки HTML-кода пропадут.",
+        ok: "Вернуться к блокам",
+        danger: true,
+      }).then(function (yes) {
+        if (!yes) return;
+        clearTimeout(liveTimer);
+        L.mode = "blocks";
+        L.html = "";
+        mode = "edit";
+        commit("mode");
+      });
+    }
 
     function findField(scope, k) {
       if (scope === "style") return STYLE_FIELDS.filter(function (f) { return f.k === k; })[0];
@@ -757,21 +968,41 @@
         var parsed;
         try { parsed = JSON.parse(String(fr.result)); } catch (_) { parsed = null; }
         /* чужой json не должен превращать письмо в пустой холст молча */
-        if (!parsed || !Array.isArray(parsed.blocks)) {
+        var ok = parsed && (Array.isArray(parsed.blocks) ||
+          (parsed.mode === "html" && typeof parsed.html === "string"));
+        if (!ok) {
           onChange(get(), "upload-bad");
           return;
         }
         L = normalize(parsed);
         sel = null;
         tab = "style";
+        mode = isHtml() ? "code" : "edit";
         commit("upload");
       };
       fr.readAsText(file);
     }
 
+    /* Файл письма: тот же HTML, что во вкладке «HTML письма». */
+    function downloadHtml() {
+      var id = typeof opts.id === "function" ? opts.id() : opts.id;
+      var name = "pismo-" + (id != null && id !== "" ? String(id).replace(/[^\w.-]+/g, "_") : "shablon") + ".html";
+      var blob = new Blob([toHtml(L)], { type: "text/html;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      onChange(get(), "download-html");
+    }
+
     function copyCode(btnEl) {
       var ta = host.querySelector(".lt-code textarea");
       if (!ta) return;
+      var ro = ta.hasAttribute("readonly");
       var done = function (ok) { btnEl.textContent = ok ? "Скопировано" : "Не удалось"; 
         setTimeout(function () { btnEl.textContent = "Скопировать"; }, 1800); };
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -782,7 +1013,7 @@
       ta.select();
       var ok = false;
       try { ok = document.execCommand("copy"); } catch (_) { ok = false; }
-      ta.setAttribute("readonly", "");
+      if (ro) ta.setAttribute("readonly", "");
       done(ok);
     }
 
@@ -793,14 +1024,20 @@
     return {
       get: get,
       html: function () { return toHtml(L); },
-      isEmpty: function () { return !L.blocks.length; },
-      set: function (v) { L = normalize(v); sel = null; tab = "style"; draw(); },
+      isEmpty: function () { return isHtml() ? !L.html.trim() : !L.blocks.length; },
+      set: function (v) {
+        L = normalize(v); sel = null; tab = "style";
+        if (isHtml()) mode = "code";
+        draw();
+      },
     };
   }
 
   window.AdminLetter = {
     create: create,
     toHtml: toHtml,
+    lintHtml: lintHtml,
+    LINT_RULES: LINT_RULES,
     TYPES: TYPES,
     PALETTE: PALETTE,
     FONTS: FONTS,

@@ -75,11 +75,14 @@
   var letter = window.AdminLetter.create({
     mount: $("#mvLetter"),
     value: rec ? rec.letter : { blocks: [] },
+    /* имя файла «Скачать .html»: у несохранённой рассылки номера ещё нет */
+    id: function () { return rec ? rec.id : null; },
     onChange: function (_, what) {
       /* конструктор сам формулирует сообщения о загрузке картинок */
       if (what && what.indexOf("msg:") === 0) { toast(what.slice(4)); return; }
       if (what === "upload-bad") { toast("Это не шаблон письма — в файле нет блоков"); return; }
       if (what === "download") { toast("Шаблон выгружен"); return; }
+      if (what === "download-html") { toast("HTML письма скачан"); return; }
       if (what === "upload") { toast("Шаблон загружен"); }
       markDirty();
     },
@@ -140,7 +143,11 @@
 
   function checkSend() {
     if (!checkDraft()) return false;
-    if (letter.isEmpty()) return err("Письмо пустое. Добавьте хотя бы один блок в «Текст письма».");
+    if (letter.isEmpty()) {
+      return err(letter.get().mode === "html"
+        ? "Письмо пустое. Впишите HTML-код письма во вкладке «HTML письма»."
+        : "Письмо пустое. Добавьте хотя бы один блок в «Текст письма».");
+    }
 
     if (audEl.value === "all") {
       var t = M.throttle();
