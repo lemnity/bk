@@ -35,11 +35,15 @@
     return h & 0x7fffffff || 1;
   }
 
+  /* mulberry32: целочисленная арифметика через Math.imul, результат в [0, 1) */
   function seeded(seed) {
-    var s = seed;
+    var a = seed >>> 0;
     return function () {
-      s = (s * 1103515245 + 12345) & 0x7fffffff;
-      return s / 0x7fffffff;
+      a = (a + 0x6d2b79f5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
 
@@ -202,6 +206,6 @@
 
   window.AdminReportData = {
     ops: ops, events: events, channels: channels, payTypes: payTypes, kinds: kinds,
-    range: range, sum: sum, count: count, groupBy: groupBy,
+    range: range, seeded: seeded, sum: sum, count: count, groupBy: groupBy,
   };
 })();

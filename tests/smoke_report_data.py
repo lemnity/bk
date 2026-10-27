@@ -59,6 +59,9 @@ try:
         check(ev("AdminReportData.groupBy(AdminReportData.ops({}), o => o.zone).size") == 4, "groupBy")
         check(len(ev("AdminReportData.events()")) == 4, "events")
 
+        check(ev("(() => { const r = AdminReportData.seeded(7); const seen = new Set(); for (let i = 0; i < 100000; i++) { const v = r(); if (!(v >= 0 && v < 1)) return false; seen.add(v); } return seen.size > 99000; })()"), "ГПСЧ: 100k значений в [0,1), без коротких циклов")
+        check(ev("AdminReportData.ops({}).every(o => Number.isInteger(o.row) && Number.isInteger(o.seat) && o.row > 0 && o.seat > 0)"), "row/seat целые, без NaN")
+
         # кеш сбрасывается при смене данных
         ev("AdminStore.update(s => { s.EVENTS[0].date = '2026-07-20'; })")
         c = ev("JSON.stringify(AdminReportData.ops({}))")
