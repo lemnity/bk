@@ -212,6 +212,42 @@ try:
         page.dispatch_event('.lt-pane input[data-f="href"]', "change")
         check('<a href="https://x.ru"' in code(page), "кнопка со ссылкой — <a>")
 
+        # небезопасная ссылка у кнопки: рендер как без ссылки + предупреждение
+        BAD = "Небезопасная ссылка — разрешены http(s) и mailto"
+        page.click(".lt-canvas .lt-b >> nth=1")
+        page.fill('.lt-pane input[data-f="href"]', "javascript:alert(1)")
+        check(page.is_visible(".lt-warn") and page.inner_text(".lt-warn") == BAD,
+              "кнопка: javascript: — предупреждение (%r)" % page.inner_text(".lt-warn"))
+        page.dispatch_event('.lt-pane input[data-f="href"]', "change")
+        c = code(page)
+        check("javascript:" not in c and "Смотреть афишу</span>" in c, "кнопка: javascript: — <span>, без href")
+        page.click(".lt-canvas .lt-b >> nth=1")
+        check(page.is_visible(".lt-warn") and page.inner_text(".lt-warn") == BAD,
+              "кнопка: предупреждение после перерисовки панели")
+        page.fill('.lt-pane input[data-f="href"]', "{{unsubscribe_url}}")
+        check(page.is_hidden(".lt-warn"), "кнопка: {{переменная}} — без предупреждения")
+        page.fill('.lt-pane input[data-f="href"]', "https://x.ru")
+        page.dispatch_event('.lt-pane input[data-f="href"]', "change")
+
+        # картинка: та же проверка схем
+        img = lambda href: page.evaluate("""h => AdminLetter.TYPES.image.html({t:'image', src:'https://x.ru/i.png',
+                                                alt:'', href:h, width:100, align:'center', pad:10})""", href)
+        check("<a " not in img("javascript:alert(1)") and "javascript" not in img("javascript:alert(1)"),
+              "картинка: javascript: — без <a>")
+        check("<a " not in img("data:text/html,x") and "<a " not in img("  JAVASCRIPT:x"), "картинка: data:/JAVASCRIPT: — без <a>")
+        check('<a href="mailto:a@b.ru"' in img("mailto:a@b.ru") and '<a href="https://x.ru"' in img(" https://x.ru ") and
+              '<a href="{{unsubscribe_url}}"' in img("{{unsubscribe_url}}"), "картинка: http(s)/mailto/{{…}} — <a>")
+        add_block(page, "image")
+        check(page.is_hidden(".lt-warn"), "картинка без ссылки — без предупреждения")
+        page.fill('.lt-pane input[data-f="href"]', "javascript:alert(1)")
+        check(page.is_visible(".lt-warn") and page.inner_text(".lt-warn") == BAD, "картинка: javascript: — предупреждение")
+        page.dispatch_event('.lt-pane input[data-f="href"]', "change")
+        check("javascript:" not in code(page), "картинка: javascript: не попадает в HTML")
+        page.click(".lt-canvas .lt-b >> nth=-1")
+        page.fill('.lt-pane input[data-f="href"]', "")
+        page.dispatch_event('.lt-pane input[data-f="href"]', "change")
+        check(page.is_hidden(".lt-warn"), "картинка: ссылка стёрта — предупреждение скрыто")
+
         # ---- HTML-режим: переменная в .lt-src, отписка не дублируется ----
         page.click('[data-mode="code"]')
         page.click(".lt-to-html")

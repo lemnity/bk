@@ -1,6 +1,6 @@
 """Смоук тестовой отправки письма: python3 tests/smoke_letter_test_send.py"""
 import http.server, os, socket, sys, threading, functools
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 fails = []
@@ -75,7 +75,12 @@ try:
         page.fill("#ltTestTo", "a@site.ru, b@site.ru")
         page.click(".dlg-actions button:last-child")
         page.wait_for_selector(".dlg", state="detached")
-        check("Тест отправлен на 2 адреса" in page.inner_text("#toast"), "тост: %r" % page.inner_text("#toast"))
+        # тост: .toast скрыт через visibility с transition — inner_text сразу после .show
+        # может вернуть '', поэтому ждём текст ретраящим expect
+        try:
+            expect(page.locator("#toast")).to_contain_text("Тест отправлен на 2 адреса")
+        except AssertionError:
+            check(False, "тост: %r" % page.text_content("#toast"))
         note = page.inner_text(".lt-test-note")
         check("Последний тест:" in note and "a@site.ru, b@site.ru" in note, "последний тест: %r" % note)
 
@@ -84,8 +89,11 @@ try:
         page.fill("#ltTestTo", "c@site.ru")
         page.click(".dlg-actions button:last-child")
         page.wait_for_selector(".dlg", state="detached")
-        check("Тест отправлен на 1 адрес" in page.inner_text("#toast") and "адреса" not in page.inner_text("#toast"),
-              "склонение для 1: %r" % page.inner_text("#toast"))
+        try:
+            expect(page.locator("#toast")).to_have_text("Тест отправлен на 1 адрес")
+        except AssertionError:
+            check(False, "склонение для 1: %r" % page.text_content("#toast"))
+        check("адреса" not in page.text_content("#toast"), "склонение для 1: %r" % page.text_content("#toast"))
 
         # сохранённая рассылка: запись переживает перезагрузку
         page.fill("#mvName", "Смоук тестовой отправки")

@@ -59,6 +59,21 @@
     return /^(https?:\/\/|mailto:)\S+$/i.test(u) || /^\{\{\s*\w+\s*\}\}$/.test(u);
   }
 
+  /* Ссылка кнопки/картинки: тот же список схем, что у мини-разметки.
+     Небезопасная (javascript:, data: …) рендерится как пустая. */
+  function blockHref(b) {
+    var u = String(b.href || "").trim();
+    return u && safeHref(u) ? u : "";
+  }
+
+  /* Предупреждение в свойствах блока со ссылкой ("" — всё в порядке) */
+  function hrefWarn(t, href) {
+    var u = String(href || "").trim();
+    if (u && !safeHref(u)) return "Небезопасная ссылка — разрешены http(s) и mailto";
+    if (!u && t === "button") return "Добавьте ссылку — без неё кнопка не кликается";
+    return "";
+  }
+
   function inlineMarks(s) {
     /* ссылки и {{…}} прячем, чтобы «_» в адресе или в {{event_title}}
        не превратились в курсив */
@@ -218,11 +233,12 @@
       ],
       html: function (b) {
         /* ссылкой, а не <button>: кнопки в письмах не работают. Без адреса —
-           <span> того же вида: href="#" в письме ведёт в никуда */
+           <span> того же вида: href="#" в письме ведёт в никуда. Небезопасная
+           ссылка (не http(s)/mailto/{{…}}) — тоже <span> */
         var look = 'style="display:inline-block;padding:12px 26px;' +
           "background:" + b.bg + ";color:" + b.color + ";border-radius:" + b.radius +
           'px;font-size:15px;font-weight:600;text-decoration:none">' + esc(b.text);
-        var href = String(b.href || "").trim();
+        var href = blockHref(b);
         return '<div style="padding:' + pad(b) + ";text-align:" + b.align + '">' +
           (href ? '<a href="' + esc(href) + '" ' + look + "</a>" : "<span " + look + "</span>") +
           "</div>";
@@ -248,7 +264,7 @@
           : '<div style="padding:28px;background:#E9EEF6;color:#596A82;font-size:13px">' +
             "Картинка не выбрана</div>";
         return '<div style="padding:' + pad(b) + ";text-align:" + b.align + '">' +
-          (b.href ? '<a href="' + esc(b.href) + '" style="text-decoration:none">' + img + "</a>" : img) +
+          (blockHref(b) ? '<a href="' + esc(blockHref(b)) + '" style="text-decoration:none">' + img + "</a>" : img) +
           "</div>";
       },
     },
@@ -711,16 +727,16 @@
       }
       var T = TYPES[b.t];
       return '<p class="lt-group">' + esc(T.label) + "</p>" +
-        (b.t === "button" ? btnWarnHtml(b) : "") +
+        (b.t === "button" || b.t === "image" ? hrefWarnHtml(b) : "") +
         T.fields.map(function (f) {
           var v = f.k === "count" ? String(b.cols.length) : b[f.k];
           return fieldHtml(f, v, "block");
         }).join("");
     }
 
-    function btnWarnHtml(b) {
-      return '<p class="lt-warn" role="status"' + (String(b.href || "").trim() ? " hidden" : "") +
-        ">Добавьте ссылку — без неё кнопка не кликается</p>";
+    function hrefWarnHtml(b) {
+      var w = hrefWarn(b.t, b.href);
+      return '<p class="lt-warn" role="status"' + (w ? "" : " hidden") + ">" + esc(w) + "</p>";
     }
 
     /* Предпросмотр — всегда в песочнице без allow-scripts: HTML письма
@@ -973,7 +989,12 @@
       apply(el.dataset.scope, el.dataset.f, v);
       if (el.dataset.f === "href") {
         var warn = host.querySelector(".lt-warn");
-        if (warn) warn.hidden = !!String(v).trim();
+        var hb = blockAt(sel);
+        if (warn && hb) {
+          var w = hrefWarn(hb.t, v);
+          if (warn.textContent !== w) warn.textContent = w;
+          warn.hidden = !w;
+        }
       }
 
       if (el.type === "range") {

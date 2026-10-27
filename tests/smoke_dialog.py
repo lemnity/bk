@@ -23,7 +23,7 @@ try:
         page = br.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
-        page.on("console", lambda m: m.type == "error" and errors.append(m.text))
+        page.on("console", lambda m: m.type == "error" and "fonts.g" not in m.text and errors.append(m.text))
         page.goto("http://127.0.0.1:%d/mailing.html" % port)
         page.wait_for_function("window.AdminDialog")
 
