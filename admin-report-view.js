@@ -289,6 +289,10 @@
   }
 
   var built = false;
+  /* модель бланка, показанная на экране: выгрузки берут её, а не форму —
+     иначе после правки параметров без «Показать отчёт» файл разойдётся
+     с экраном (G5) */
+  var lastModel = null;
   var EMPTY = '<p class="rep-empty">Нет данных за выбранный период.</p>';
 
   function renderTable() {
@@ -397,16 +401,19 @@
     if (!columns.filter(function (c) { return shown[c.id]; }).length) {
       $("#repResult").innerHTML = '<p class="rep-empty">Не выбрано ни одного столбца.</p>';
       actions.hidden = true;
+      lastModel = null;
       setExports(false);
       return;
     }
     if (spec.doc) {
       var m = docModel();
+      lastModel = m.rows.length ? m : null;
       if (m.rows.length) window.AdminReportDoc.render($("#repResult"), m);
       else $("#repResult").innerHTML = EMPTY;
       actions.hidden = false;
       setExports(m.rows.length > 0);
     } else {
+      lastModel = null; /* таблица выгружается не бланком */
       setExports(renderTable() > 0);
       actions.hidden = true;
     }
@@ -420,6 +427,7 @@
     if (!validate()) {
       /* старый результат с другими параметрами не оставляем на экране */
       built = false;
+      lastModel = null;
       $("#repResultWrap").hidden = true;
       return;
     }
@@ -432,8 +440,8 @@
   [["#repWord", "word", "Документ Word сохранён"],
    ["#repExcel", "excel", "Книга Excel сохранена"]].forEach(function (b) {
     $(b[0]).addEventListener("click", function () {
-      if (!built || !spec || !spec.doc || $(b[0]).disabled) return;
-      window.AdminReportDoc.download(docModel(), b[1]);
+      if (!built || !lastModel || $(b[0]).disabled) return;
+      window.AdminReportDoc.download(lastModel, b[1]);
       toast(b[2]);
     });
   });

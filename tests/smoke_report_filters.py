@@ -152,6 +152,28 @@ try:
         check(ev2["title"] in page.inner_text("#repResult .rdoc-top"), "3: выбранное мероприятие в шапке")
         check(not page.is_disabled("#repWord"), "3: выгрузки включены")
 
+        # выгрузка = экран: правка формы без «Показать отчёт» не меняет файл
+        page.fill("#f_range_from", "2030-01-01")
+        page.fill("#f_range_to", "2030-01-31")
+        page.select_option("#f_event", "")
+        check(page.locator("#repResult .rdoc").count() == 1, "3: экран не меняется без «Показать отчёт»")
+        if page.is_enabled("#repWord"):
+            with page.expect_download() as dl:
+                page.click("#repWord")
+            body = open(dl.value.path(), encoding="utf-8-sig").read()
+            check(ev2["title"] in body and "rdoc-tot" in body and
+                  "Диапазон событий" not in body,
+                  "3: Word после правки формы = показанный бланк (%s)" % ev2["title"])
+        # и «с» > «по» без перестроения — тоже выгружается показанное
+        page.fill("#f_range_from", "2030-02-01")
+        if page.is_enabled("#repExcel"):
+            with page.expect_download() as dl:
+                page.click("#repExcel")
+            body = open(dl.value.path(), encoding="utf-8-sig").read()
+            check(ev2["title"] in body and "rdoc-tot" in body, "3: Excel при «с» > «по» = показанный бланк")
+        page.fill("#f_range_from", "")
+        page.fill("#f_range_to", "")
+
         # диапазон событий без мероприятий → пустое состояние
         page.select_option("#f_event", "")
         page.fill("#f_range_from", "2030-01-01")
