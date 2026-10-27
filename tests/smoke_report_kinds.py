@@ -74,6 +74,28 @@ try:
             return rows.length === AdminStore.state.LEDGER.length && t === rows[rows.length - 1].saldo &&
               sp.rows({from: '2026-06-03', to: '2026-06-05'}).length === 4;
         })()"""), "ledger: сальдо и фильтр по DD.MM")
+        # период «с»: сальдо — нарастающим итогом с начала книги (входящий остаток),
+        # строки по датам, даже если запись добавлена не по порядку; «Итого» — доходы − расходы периода
+        led = ev("""(() => {
+            const L = AdminStore.state.LEDGER;
+            L.push({ date: '02.06', op: 'Смоук · поздняя запись', cat: 'Тест', amount: -1000, type: 'expense' });
+            try {
+              const sp = AdminReportKinds.specFor('Б-1'), rows = sp.rows({from: '2026-06-03'});
+              const iso = l => '2026-' + l.date.split('.')[1] + '-' + l.date.split('.')[0];
+              const ord = L.map((l, i) => ({ l, i }))
+                .sort((a, b) => iso(a.l) < iso(b.l) ? -1 : iso(a.l) > iso(b.l) ? 1 : a.i - b.i);
+              const k = ord.findIndex(x => iso(x.l) >= '2026-06-03');
+              const exp0 = ord.slice(0, k + 1).reduce((a, x) => a + x.l.amount, 0);
+              const all = sp.rows({}).map(r => r.iso);
+              return { first: rows[0].saldo, exp0, n: rows.length,
+                       sorted: all.every((d, j) => !j || all[j - 1] <= d),
+                       total: sp.total(rows).saldo,
+                       period: rows.reduce((a, r) => a + r.income - r.expense, 0) };
+            } finally { L.pop(); }
+        })()""")
+        check(led["first"] == led["exp0"] and led["first"] == 318400 - 64000 - 1000 + 142900 and
+              led["sorted"] and led["total"] == led["period"] and led["n"] == 6,
+              "ledger: с «с» сальдо первой строки = сумма записей до неё включительно, строки по датам: %r" % led)
         check(ev("AdminReportSpecs.get('3').doc && AdminReportSpecs.get('3а').doc ? true : false"), "ручные 3/3а на месте")
         check(ev("AdminReportSpecs.get('нет-такого') === null"), "неизвестный номер → null")
 

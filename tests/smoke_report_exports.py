@@ -2,14 +2,14 @@
 
 На report.html?no=5 (табличный отчёт) Word/Excel/CSV скачиваются под именем
 otchet-5-<дата>.<ext> и повторяют экран, «Печать / PDF» вызывает window.print,
-а @media print прячет сайдбар, форму и кнопки; бланк «3» тоже выгружается в CSV.
+а @media print прячет сайдбар, форму и кнопки, оставляя заголовок отчёта; бланк «3» тоже выгружается в CSV.
 В каталоге «↓» у строки «1» скачивает .xls без перехода, «⚙» открывает
 report.html?no=1&setup=1 с раскрытым меню столбцов. На ledger.html «Сформировать
 отчёт» ведёт на report.html?no=Б-1, итог сальдо = сумма S.LEDGER.amount.
 """
 import csv, datetime, functools, http.server, io, os, re, socket, sys, threading
 from urllib.parse import quote, unquote
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 fails = []
@@ -106,9 +106,15 @@ try:
         check(page.evaluate("window.__printed") == 1, "5: «Печать / PDF» вызывает window.print")
         page.emulate_media(media="print")
         check(not page.is_visible(".side") and not page.is_visible("#repForm") and
-              not page.is_visible("#repDocActions") and not page.is_visible(".top") and
+              not page.is_visible("#repDocActions") and not page.is_visible(".crumbs") and
               page.is_visible("#repResult table"),
               "5: при печати видна только таблица (без сайдбара, формы и кнопок)")
+        title = page.inner_text("#repTitle").strip()
+        check(page.is_visible("#repTitle") and title and title != "Отчёт",
+              "5: при печати виден заголовок отчёта (%r)" % title)
+        check(not page.is_visible(".top .crumb") and not page.is_visible("#repFavBtn") and
+              not page.is_visible("#repResultWrap > .panel-head"),
+              "5: при печати скрыты «Технологии творчества · …», «В избранное» и «Результат»")
         ml = page.evaluate("getComputedStyle(document.querySelector('.main')).marginLeft")
         check(ml == "0px", "5: при печати документ на всю ширину (margin-left %s)" % ml)
         page.emulate_media(media="screen")
@@ -144,8 +150,17 @@ try:
         check("urn:schemas-microsoft-com:office:excel" in body and "<tbody><tr>" in body,
               "каталог: .xls с данными")
         check(page.url == url0, "каталог: «↓» без перехода (%s)" % page.url)
-        page.wait_for_selector("#toast.show")
-        check("Отчёт № 1 выгружен" in page.inner_text("#toast"), "каталог: тост «Отчёт № 1 выгружен»")
+        # .toast скрыт через visibility с transition — ждём текст ретраящим expect
+        try:
+            expect(page.locator("#toast")).to_contain_text("Отчёт № 1 выгружен")
+        except AssertionError:
+            check(False, "каталог: тост «Отчёт № 1 выгружен» (%r)" % page.text_content("#toast"))
+
+        # печать каталога и других страниц — без правил отчёта (как до ветки)
+        page.emulate_media(media="print")
+        check(page.is_visible(".side") and page.is_visible(".top"),
+              "каталог: при печати сайдбар и шапка не скрыты правилами отчёта")
+        page.emulate_media(media="screen")
 
         page.click('#repList tr[data-no="1"] button[data-act="setup"]')
         page.wait_for_url("**/report.html?no=1&setup=1")

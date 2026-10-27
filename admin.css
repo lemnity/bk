@@ -1223,15 +1223,19 @@ body.dlg-lock{overflow:hidden}
   .dlg-actions .btn{flex:1 1 auto}
 }
 
-/* «Печать / PDF» отчёта — печатается сам экран: без сайдбара, шапки,
-   формы параметров и кнопок, документ на всю ширину листа.
+/* «Печать / PDF» отчёта — печатается сам экран: без сайдбара, крошек,
+   формы параметров и кнопок, документ на всю ширину листа; заголовок
+   отчёта (h1#repTitle) остаётся. Правила только для страницы отчёта
+   (report.html: data-page="reports" + #repResultWrap) — каталог и другие
+   страницы кабинета печатаются как раньше.
    Блок стоит последним: узкие @media выше не должны его перебивать */
 @media print{
-  .side,.top,.crumbs,.rv-noprint,.rdoc-actions,.toast{display:none !important}
-  body.admin{background:var(--surface)}
-  .main{margin-left:0;padding:0;max-width:none}
-  .panel{border:none;box-shadow:none;border-radius:0;margin:0}
-  .panel.pad{padding:0}
-  .table-wrap,.rdoc-scroll{overflow:visible;border:none}
-  .rdoc-table,.rdoc-sum{min-width:0}
+  body.admin[data-page="reports"]:has(#repResultWrap) :is(.side,.crumbs,.top .crumb,.rv-fav,.rv-noprint,.rdoc-actions,.toast,#repResultWrap > .panel-head){display:none !important}
+  body.admin[data-page="reports"]:has(#repResultWrap){background:var(--surface)}
+  body.admin[data-page="reports"]:has(#repResultWrap) .main{margin-left:0;padding:0;max-width:none}
+  body.admin[data-page="reports"]:has(#repResultWrap) .top{margin-bottom:12px}
+  body.admin[data-page="reports"]:has(#repResultWrap) .panel{border:none;box-shadow:none;border-radius:0;margin:0}
+  body.admin[data-page="reports"]:has(#repResultWrap) .panel.pad{padding:0}
+  body.admin[data-page="reports"]:has(#repResultWrap) :is(.table-wrap,.rdoc-scroll){overflow:visible;border:none}
+  body.admin[data-page="reports"]:has(#repResultWrap) :is(.rdoc-table,.rdoc-sum){min-width:0}
 }

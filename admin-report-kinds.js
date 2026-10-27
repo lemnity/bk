@@ -423,14 +423,22 @@
       rows: function (p) {
         p = p || {};
         var bal = 0;
-        return (S().LEDGER || []).map(function (l) {
+        /* Записи в S.LEDGER идут в порядке добавления, а не по датам
+           (бухгалтерия дописывает расходы в конец), поэтому сначала
+           сортируем по дате — устойчиво, при равных датах порядок
+           добавления. Сальдо считаем с начала книги, и только потом
+           режем по периоду: первая строка периода несёт входящий
+           остаток всех записей до «с». */
+        return (S().LEDGER || []).map(function (l, i) {
           var dm = String(l.date || "").split(".");
           var iso = "2026-" + dm[1] + "-" + dm[0];
           var amt = +l.amount || 0;
-          return { iso: iso, date: ruDate(iso), op: l.op, cat: l.cat,
+          return { _i: i, iso: iso, date: ruDate(iso), op: l.op, cat: l.cat,
                    income: amt > 0 ? amt : 0, expense: amt < 0 ? -amt : 0 };
-        }).filter(function (r) { return inRange(r.iso, p.from, p.to); })
-          .map(function (r) { bal += r.income - r.expense; r.saldo = bal; return r; });
+        }).sort(function (a, b) {
+          return a.iso < b.iso ? -1 : a.iso > b.iso ? 1 : a._i - b._i;
+        }).map(function (r) { bal += r.income - r.expense; r.saldo = bal; delete r._i; return r; })
+          .filter(function (r) { return inRange(r.iso, p.from, p.to); });
       },
       /* сальдо нарастающим итогом не суммируется: в «Итого» — доходы − расходы */
       total: function (rows) {
